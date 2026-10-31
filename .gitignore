@@ -13,7 +13,8 @@ examples/outputs/
 data/
 *.pth
 
-# mw_agentic: local learning state and checkpoints, not shipped
-mw_agentic/workspace/rl/
-mw_agentic/recipes/learned/
+# mw_agentic: the agentic choreography layer is kept out of this public
+# repo entirely (not just its learning state) - full_flow_animation/app.py
+# imports it optionally and degrades cleanly without it
+mw_agentic/
 full_flow_animation/checkpoints/

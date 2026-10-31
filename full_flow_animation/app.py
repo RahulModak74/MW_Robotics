@@ -5,9 +5,11 @@ full_flow_animation/app.py
 Flask backend for the interactive MW robot demo. Loads the six cached
 checkpoints (run train_and_cache.py first), keeps server-side state for
 TWO named robots ("a", "b"), and exposes one route per behaviour plus a
-choreography endpoint that drives both from mw_agentic's agentic layer
-(../mw_agentic/ - a recipe first, an LLM only when needed, see its
-README.md). Every per-behaviour route returns a list of animation frames
+choreography endpoint that, if a sibling mw_agentic/ package is present
+(not part of this repo), drives both robots from its agentic layer - a
+recipe first, an LLM only when needed. Without it, /api/choreograph
+returns a clear 501 and every per-behaviour manual route still works
+unchanged. Every per-behaviour route returns a list of animation frames
 decoded from the matching trained manifold via robot_motion.compute_path()
 - see that file's docstring and README.md for exactly what is real.
 
@@ -22,8 +24,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask, jsonify, request, send_from_directory
 
 from mw_framework import MWDetector
-from mw_agentic.orchestrate import choreograph as mw_choreograph
 import robot_motion as rm
+
+try:
+    from mw_agentic.orchestrate import choreograph as mw_choreograph
+except ImportError:
+    mw_choreograph = None
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CKPT_DIR = os.path.join(HERE, "checkpoints")
@@ -177,6 +183,10 @@ def choreograph_route():
     each robot's own time order. Returns the spec, which path was taken
     (recipe/llm), how many model calls it cost, and the resolved per-action
     frames for the frontend to schedule and play."""
+    if mw_choreograph is None:
+        return jsonify({"ok": False, "errors": ["mw_agentic is not installed - the "
+                       "agentic choreography layer is not part of this repo"]}), 501
+
     body = request.get_json(force=True)
     task = (body.get("task") or "").strip()
     if not task:

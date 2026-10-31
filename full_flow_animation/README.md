@@ -1,9 +1,10 @@
 # MW Robotics — interactive demo
 
 An interactive Flask + D3 demo: **two** humanoid figures, side view, each driven by the same six
-trained MW manifolds in `../mw_framework/domains/`. Click-control one directly (unit A), or type a
-task in plain words and let `../mw_agentic/` (a standalone agentic layer modelled on
-`~/DASHBOARD_FACTORY/analytics-harness-1.7`) choreograph both.
+trained MW manifolds in `../mw_framework/domains/`. Click-control one directly (unit A). The
+choreography text field (`POST /api/choreograph`) is wired up but the agentic layer behind it
+is not part of this repo - without it the route returns a clear 501 and every manual control
+still works unchanged. See "Two robots, and the agentic choreography endpoint" below.
 
 ## Run it
 ```bash
@@ -25,21 +26,16 @@ python app.py
 | The lifting arm / payload | `flexible_robot` | Euler-Bernoulli beam PDE |
 | The outline glow | `actuator_thermal` | 1D heat-diffusion PDE |
 
-## Two robots, and the agentic choreography layer
+## Two robots, and the agentic choreography endpoint
 
 `app.py` keeps independent server-side state for robots `"a"` and `"b"`; every route accepts an
-optional `"robot"` field (default `"a"`, so the original single-robot controls still work
-unchanged). `POST /api/choreograph {"task": "..."}` calls `mw_agentic.orchestrate.choreograph()`:
-
-- A known request ("dance", "wave hello", ...) is answered by a **hand-written recipe**,
-  rendered and validated with **zero model calls**.
-- A novel request calls a model once (the `claude` CLI if available, else a raw
-  `ANTHROPIC_API_KEY`), validates the result against the same physical-range schema every
-  action is checked against, and **saves it as a new recipe** - the identical request next time
-  costs zero model calls too. See `../mw_agentic/README.md` for the full design and its mapping
-  to the harness.
-- The validated spec is resolved into real decoded frames (one `_run_tool()` call per action, in
-  each robot's own time order) and returned for the frontend to schedule and play.
+optional `"robot"` field (default `"a"`, so the manual single-robot controls always work).
+`POST /api/choreograph {"task": "..."}` tries to import a sibling `mw_agentic` package (an
+agentic layer: hand-written recipes tried first with zero model calls, a model - `claude` CLI or
+a raw `ANTHROPIC_API_KEY` - called only for a novel request, then learned for next time) and, if
+present, calls its `orchestrate.choreograph()`. **That package is not part of this public repo.**
+Without it the route returns `501` with a clear error, and the frontend's choreography field
+just logs `CHOREOGRAPHY FAILED: ...` - no crash, every manual control keeps working.
 
 ## What is real here, precisely
 
@@ -55,9 +51,9 @@ unchanged). `POST /api/choreograph {"task": "..."}` calls `mw_agentic.orchestrat
 - **The accuracy numbers already measured for this mechanism apply here too**: roughly 1–14%
   of the state's range depending on hop size (see `../FORECASTER.md`). This demo does not
   re-measure accuracy; it reuses the same interpolation approach the measurements are for.
-- **The choreography validator's parameter ranges match the trained domains exactly**
-  (`../mw_agentic/choreography.py`) - a request outside what a manifold was actually shown is
-  rejected before it ever reaches one, whether it came from a hand-written recipe or a model.
+- **When the agentic layer is present**, its choreography validator's parameter ranges match the
+  trained domains exactly - a request outside what a manifold was actually shown is rejected
+  before it ever reaches one, whether it came from a hand-written recipe or a model.
 
 ## What is not claimed
 
@@ -74,8 +70,8 @@ unchanged). `POST /api/choreograph {"task": "..."}` calls `mw_agentic.orchestrat
 - **The arm is mounted on the figure in the rendering only.** `planar_arm`'s own training data
   has no body coupling; the frontend positions the decoded local coordinates at the shoulder.
   The domains were not trained together and do not know about each other.
-- **The agentic layer's task matching is bag-of-words, not semantic** - see
-  `../mw_agentic/README.md` for exactly what that does and does not catch.
+- **The agentic choreography layer is not shipped in this repo.** `/api/choreograph` is a real,
+  wired-up endpoint - it is just not backed by anything here.
 
 ## Files
 ```
