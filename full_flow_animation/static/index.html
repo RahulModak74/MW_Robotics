@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MW ROBOTICS :: UNIT T-MW</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="layout">
+  <div id="scene-col">
+    <div id="brand-header">
+      <img src="BAYESIANCYBER_LOGO.png" alt="Bayesian Cybersecurity">
+      <span class="wordmark">BAYESIAN CYBERSECURITY</span>
+      <span class="tagline">MW ROBOTICS DEMO</span>
+    </div>
+    <div id="scene-wrap">
+      <svg id="scene" viewBox="0 0 640 420"></svg>
+      <div id="scanlines"></div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-walk-l">&larr; WALK</button>
+      <button id="btn-hop">JUMP</button>
+      <button id="btn-lift">LIFT</button>
+      <button id="btn-walk-r">WALK &rarr;</button>
+      <div class="ctl-row">
+        <label>HEAD / JOINT_ACTUATOR set-point</label>
+        <input id="joint-slider" type="range" min="-1.4" max="1.4" step="0.05" value="0.8">
+      </div>
+      <p class="hint">Click near the raised hand to make it reach (planar_arm). Every motion is
+      decoded from a trained MW manifold, not hand-animated. Not a safety system.</p>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="hud-head">
+      <span class="dot"></span> MW ROBOTICS — UNIT T-MW — SIX MANIFOLDS ONLINE
+    </div>
+    <div class="hud-row"><span class="k">TARGET</span><span id="hud-domain" class="v">—</span></div>
+    <div class="hud-row"><span class="k">LAW</span><span id="hud-eq" class="v small">—</span></div>
+    <div class="hud-row"><span class="k">HEAT</span><span id="hud-heat" class="v">0%</span></div>
+    <div id="hud-telemetry">
+      <div class="t-label">// LIVE TELEMETRY</div>
+      <pre id="telemetry-box">awaiting input_</pre>
+    </div>
+    <div id="hud-log"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# Everything else needed (torch, pyro-ppl, numpy, pandas) is already in the
+# parent repo's requirements.txt. This adds only what the demo app needs.
+flask>=3.0
