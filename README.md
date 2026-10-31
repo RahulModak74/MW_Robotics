@@ -2,6 +2,13 @@
 
 **The Modak-Walawalkar (MW) method, applied to robotics.**
 
+**Start here: [path_to_full_Robotics.md](path_to_full_Robotics.md) is the actual plan and
+destination for this repo** — a staged path from where this repo stands today to full,
+ProtoMotions-scale robotics demos: a coupled many-joint body, real-time control, learning from
+real motion data, a real robot. Every stage is rated for how likely it is to work, and every
+stage builds on something already proven. Everything below is the evidence behind that plan —
+useful background, but the plan itself is the point.
+
 MW is a way to learn the physics of a system from data, instead of solving the physics
 equations directly every time you need an answer. It's already proven in one hard domain —
 battery analytics, where it runs in production and holds up against public datasets and an
