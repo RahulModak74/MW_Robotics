@@ -38,7 +38,7 @@ is supported; "this robotics validator works" is not yet.**
    the trained decoder satisfy the moment-curvature constitutive law and the strain limit to
    within the training sensor noise.
 
-## What this does NOT yet show (measured 2026-10-31, not glossed over)
+## What this does NOT yet show (measured 2026-10-31)
 1. **Two of three labelled faults are only weakly caught.** `stiffness_loss` (a crack: local
    loss of stiffness) and `moment_glitch` (a moment-sensor fault) score ROC-AUC ~0.57 and
    ~0.64 — barely above chance.

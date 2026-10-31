@@ -97,7 +97,7 @@ if HAS_PLT:
     ax.invert_xaxis()
     save(fig, "00_flexible_robot_validator.png")
 
-takeaway("""MIXED RESULT - reported as measured, not smoothed over.
+takeaway("""MIXED RESULT.
 The mechanism runs end to end on a genuine robotics PDE: it trains, it scores states in one
 pass, and the generated manifold obeys the moment-curvature law and the strain limit. The
 no_decay fault (lost damping) is caught perfectly (AUC 1.00). But stiffness_loss and

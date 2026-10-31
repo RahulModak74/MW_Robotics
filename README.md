@@ -59,7 +59,7 @@ python examples/00_flexible_robot_validator.py      # a few minutes; GPU auto-us
 pytest -q
 ```
 
-Measured result, not glossed over (full writeup in [ROBOTICS.md](ROBOTICS.md)):
+Measured result (full writeup in [ROBOTICS.md](ROBOTICS.md)):
 - The MW *mechanism* (same `core.py`, zero edits) trains and runs on this new, genuine
   robotics PDE with no changes to the framework.
 - One labelled fault (a stuck damper / lost damping) is caught cleanly: ROC-AUC 1.00.
@@ -69,11 +69,9 @@ Measured result, not glossed over (full writeup in [ROBOTICS.md](ROBOTICS.md)):
   parent repo's Navier-Stokes example does for a fluid solver — **failed**: MW distance fell
   as the approximate simulator's fidelity dropped, instead of rising.
 
-This is reported as a finding, not hidden. **This repository does not yet prove a working
-robotics physics validator**, let alone a forward-time simulator that replaces a robotics
-engine. It proves the *mechanism* transfers to a new PDE with no framework changes, and it
-surfaces exactly where the current three laws fall short. See
-[ROBOTICS.md](ROBOTICS.md) for the diagnosis and what would need to change.
+**The repository is yet to prove a working robotics validator or simulator — that's it.**
+The mechanism transfers to a new PDE with no framework changes; the laws built on top of it
+don't yet. See [ROBOTICS.md](ROBOTICS.md) for the diagnosis and what would need to change.
 
 ## What is in the box
 
