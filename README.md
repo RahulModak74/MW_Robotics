@@ -8,6 +8,12 @@ physics-constrained Bayesian manifold learning, with everything specific to othe
 (battery, RF, fluid flow, electrical) removed and one new domain added — a genuine robotics
 PDE.
 
+Two Zenodo preprints underlie the approach: the theory above (DOI 10.5281/zenodo.19304813),
+and ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
+(DOI 10.5281/zenodo.22954118), which frames MW as a fourth family of world models — battery
+evidence only there, not yet applied to robotics; see "Read next" below for what it does and
+does not claim.
+
 **Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed, honest result, not a clean win.**
 
 **Two different claims, kept separate:**
