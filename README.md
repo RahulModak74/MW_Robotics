@@ -122,7 +122,7 @@ on top of whichever simulator a team is already using, GPU or not. There is one 
 not-yet-built path for MW to actually attack that GPU bottleneck itself, not just work around
 it — see the next section for exactly what that would take and where it could fail.
 
-## A real alternative to GPU-scale RL training — scoped, not built yet
+## A real alternative to GPU-scale RL training — early cross-domain evidence, not yet proven here
 
 GPUs matter for RL training for one specific reason: training a policy needs millions of real
 physics samples, and a GPU lets you run thousands of simulations in parallel to generate them
@@ -132,9 +132,37 @@ learned stand-in for the simulator, and only occasionally check against the real
 one to keep it honest. This is called model-based RL, and it's the same family of idea as
 Dreamer's "world models" — and it's exactly what the theory paper behind MW, ["World Models
 with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118), already points
-toward. So this isn't a stretch; it's the natural next direction, just not built here yet.
+toward. This was first written up here as a purely scoped, unbuilt idea. It isn't purely
+hypothetical anymore — two separate, not-yet-public projects of the author's, in battery
+storage and RF sensing, have already tried versions of it, with real, mixed, instructive
+results. Robotics itself hasn't been tried with this recipe yet; what follows is what those
+two other domains actually found, and what it changes about the plan below.
 
-**What's missing today, concretely — three real gaps, not a vague "needs more work":**
+**What's already been tried elsewhere, honestly reported:**
+
+- **A working, no-RL alternative to a learned world model, already in production (battery
+  domain).** Given a current state and a physics-projected target, MW can walk a straight line
+  through its own trained latent space and decode the trajectory in between — no RL, no
+  Dreamer, no GPU-scale training needed at all. This is the exact same mechanism this repo's
+  [FORECASTER.md](FORECASTER.md) tests for the robot leg, proven separately in a different
+  domain and already deployed, not just a lab result.
+- **MW bolted onto an actual Dreamer world model, as a training-time physics check (both
+  domains) — one version failed, the fix worked.** The first attempt (RF sensing) penalized
+  the model's imagined states for looking statistically unusual. That backfired: it taught the
+  model to imagine bland, generic "normal," which made it *worse* at predicting an actual
+  attack in progress — exactly the kind of thing to check for, not assume away. The fix, tried
+  next in the battery domain, penalizes *physical impossibility* instead of mere unusualness —
+  a state no real battery pack could ever be in (capacity above rated, time running backwards),
+  not just a rare one. That fix worked: physically impossible imagined states dropped from 82%
+  to 52% to 26% as the penalty increased, with no loss of forecast accuracy at the working
+  setting. Still honestly bounded — the world model itself was under-trained on the CPU budget
+  available, and no learned policy has beaten a simple baseline yet in either domain.
+
+**The one transferable lesson for robotics, before anything else is tried:** penalize genuine
+law-violation, not blanket rarity. That failure mode is real and already observed elsewhere —
+building the plan below without it would very likely repeat the RF mistake.
+
+**What's missing today for robotics specifically — three real gaps, not a vague "needs more work":**
 
 1. **No action input.** What's proven in [FORECASTER.md](FORECASTER.md) is: given two
    *already-known* states, guess what's in between. Model-based RL needs the opposite shape:
@@ -144,12 +172,13 @@ toward. So this isn't a stretch; it's the natural next direction, just not built
 2. **No reward signal.** A policy needs to know whether an action helped. MW's manifold has no
    concept of "did this help the robot walk forward" — that has to be added separately. Not
    hard in principle (reward is usually a known function of state), but not built.
-3. **Model-exploitation risk, untested in this setting.** The chaining test in
-   [FORECASTER.md](FORECASTER.md) (Part 4) showed error doesn't pile up when every jump still
-   aims at a real, known target. Training a policy on *imagined, open-loop* rollouts with no
-   real target to correct toward is a harder, different test — the classic failure mode in
-   model-based RL is a policy that learns to exploit cracks in the learned model instead of
-   learning real physics. That has to be checked for directly, not assumed away.
+3. **Model-exploitation risk — no longer just theoretical, already seen once.** The chaining
+   test in [FORECASTER.md](FORECASTER.md) (Part 4) showed error doesn't pile up when every jump
+   still aims at a real, known target. Training a policy on *imagined, open-loop* rollouts with
+   no real target to correct toward is a harder, different test — and the RF sensing attempt
+   above already hit exactly this failure mode once, in a different domain. It has to be
+   checked for directly here too, with the admissibility-not-anomaly fix applied from the
+   start, not assumed away a second time.
 
 **A minimal, honest way to actually find out if this works:**
 
@@ -159,7 +188,9 @@ toward. So this isn't a stretch; it's the natural next direction, just not built
 2. Build a model that maps `(current state, action, dt) → next state`, instead of today's
    `(state, state) → path between them`. Check its accuracy against the real, exact dynamics —
    this domain already has the closed-form answer to check against.
-3. Add a simple reward (e.g. "track this reference angle") and train a small policy using
+3. Add a simple reward (e.g. "track this reference angle") *and* an admissibility penalty on
+   the imagined rollouts — a joint angle beyond its physical limit, energy appearing from
+   nowhere, time running backwards — not a penalty on rarity. Train a small policy using
    *only* imagined rollouts through that learned model — no real simulator calls during
    training at all.
 4. Test the trained policy against the *real* dynamics (or MuJoCo), not the learned model.
