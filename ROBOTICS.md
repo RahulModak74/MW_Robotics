@@ -98,6 +98,11 @@ real bugs found and fixed, in [FORECASTER.md](FORECASTER.md). The short version:
   MuJoCo itself re-steps that interval, once the hop is large enough (~50-100 steps) that MW's
   roughly constant per-hop cost beats MuJoCo's linearly-scaling cost — at an accuracy cost of
   roughly 7-14% of the state's range, growing with hop size.
+- Tried the battery work's own recipe (`~/SANDIA_TEST_MW/pybamm_like_gen_*.py`: many
+  independently-parameterised units, densely sampled, not a sparse grid) on this domain too —
+  it fixed the **validator** role dramatically (flag rate on unseen conditions: 15.6% -> 0.5%),
+  but did **not** improve forecaster hop accuracy, which stayed roughly unchanged. Full numbers
+  in FORECASTER.md's Part 3.
 - This is **not yet** "MW replaces MuJoCo as a forward simulator": only one domain, one
   held-out trajectory, and single hops between two *known* real states, not chained forecasts
   feeding on their own output. That chaining test is the next one that would actually settle

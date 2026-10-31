@@ -84,12 +84,57 @@ cost scales linearly with step count. They cross over around 50–100 steps; bey
 by a growing margin, at a real but bounded accuracy cost (vz error grows from ~1% to ~10% of
 range as hop size grows from 10 to 200 steps).
 
+## Part 3 — does richer, `pybamm_like_gen`-style training data help? (`03_mujoco_like_datagen.py`)
+
+The battery generators that produced the validated Sandia/HUST results
+(`~/SANDIA_TEST_MW/pybamm_like_gen_*.py`) don't sample a sparse fixed grid of conditions —
+they simulate hundreds of independent units, each with its own randomly-drawn physical
+parameters, densely sampled over continuously varying operating conditions
+(`MultiLevelDataGenerator.simulate_battery`: many "batteries" x many samples each, not a
+grid). Parts 1 and 2 above both trained on a sparse 40-point fixed grid (10 heights x 4
+damping settings) instead. This applies the same recipe — 80 independent MuJoCo drops, each
+with continuously-randomised height and contact damping — and re-measures both roles.
+
+**Validator: a dramatic, real improvement.**
+
+| Training data | Flag rate on held-out (height, damping) combinations |
+|---|---|
+| 40-point fixed grid | 15.6% |
+| 80 continuously-randomised units | **0.5%** — at the noise floor |
+
+With denser, continuously-varied coverage, the manifold generalises to unseen parameter
+combinations almost perfectly. Caveat: "held-out" here means unseen parameter *values* from
+the same generative process (MuJoCo with this contact model), not an independent physics
+source — it tests whether the manifold's shape generalises across the trained distribution,
+which is exactly what should improve with denser coverage, and did.
+
+**Forecaster: no clear improvement.**
+
+| | 40-point grid | 80-unit continuous |
+|---|---|---|
+| Pure reconstruction, z / vz error | 2.5% / 1.0% | 3.0% / 1.6% (slightly worse) |
+| Hop error at dt=0.2s, z / vz | 13.3% / 6.3% | 12.5% / 6.9% (essentially unchanged) |
+
+The timing crossover shifted slightly earlier in this run, but that is most likely
+machine-load variance between runs, not a real effect — pure inference cost shouldn't depend
+on training-data density at all (same architecture, same forward pass), so this isn't
+reported as a finding.
+
+**Honest conclusion:** the `pybamm_like_gen` recipe is a real, significant fix for the
+**validator** role — the same mechanism that made the battery work generalise well. It does
+**not** move the needle on the **forecaster** role tested here; that error is dominated by
+something else (most likely the interpolation gap itself), not by training-data density
+within the range tested.
+
 ## What this does and does not support
 
 - **Supports:** for `legged_contact`, a single hop of up to ~200 MuJoCo steps (0.4s of real
   flight) can be predicted from two real encoded endpoints, faster than MuJoCo itself, with
   errors in the 7–14%-of-range band. The reconstruction floor on in-distribution states (2.5%/
   1.0%) shows the manifold itself is a good fit; the hop error is the interpolation's own cost.
+  Separately, denser/richer training data (Part 3) makes the **validator** role generalise to
+  unseen conditions almost perfectly (15.6% -> 0.5% flag rate) — a real, large effect, just not
+  one that transfers to the forecaster's hop accuracy.
 - **Does not yet support:** "MW replaces MuJoCo as a forward simulator." This is one domain,
   one held-out trajectory, single hops only (no chained/repeated forecasting tested, so drift
   over many hops is unknown), and both endpoints were *real, known* states, not states produced
