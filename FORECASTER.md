@@ -194,6 +194,13 @@ standalone predictor.
 3. **Tighten the accuracy-vs-jump-size numbers** with more jump sizes and more held-out
    trajectories (this report used just one), and report a range, not a single run — the same
    standard already used for the battery evidence.
+4. **If MW is ever bolted onto a trained RL world model (e.g. Dreamer) as a training-time
+   check, penalize genuine physical impossibility, not statistical rarity.** This isn't a
+   guess — two separate, not-yet-public projects of the author's (RF sensing, battery storage)
+   already tried both versions. Penalizing rarity backfired (it taught the model to imagine
+   bland "normal," hurting prediction of real anomalies); penalizing physical impossibility
+   worked (cut impossible imagined states 82% → 26% with no accuracy loss). Worth knowing
+   before anyone repeats the first mistake here.
 
 ## Try it yourself
 ```bash

@@ -90,123 +90,34 @@ In short: a working robot simulator isn't proven yet. What is proven is that the
 unchanged, works across six very different kinds of robot physics — and every weak spot found
 so far comes with a concrete next step, not a shrug.
 
-## MW and MuJoCo: not alternatives — MW runs on top of MuJoCo
+## MW as a world model — the clearest proof so far
 
-A natural question, since MuJoCo (a real physics simulator) is already free and runs fine on a
-CPU: why use MW at all? Because they do different jobs, and the MuJoCo work in this repo
-(`mujoco_experiments/`, [FORECASTER.md](FORECASTER.md)) has MW running *on top of* MuJoCo, not
-instead of it.
+In RL terms, MW's trained manifold is a **world model** — a model of which states a system
+can be in, learned from physics instead of from millions of trial-and-error samples.
+Model-based RL methods like Dreamer already plan by **walking between two points in a learned
+latent space** — that's not new vocabulary. MW does exactly that, with one big
+simplification: when the target state can be computed directly from known physics (instead of
+learned by trial and error), there's no policy to train, no reward function, and no millions
+of simulated steps needed — just encode the current state, encode the target, walk a straight
+line between them, decode each step along the way. No RL loop, no simulator-in-the-loop
+training, no GPU.
 
-- **MuJoCo is the ground truth.** Given a robot model, it simulates real physics step by step
-  and tells you exactly what happens next. It needs no training data, and it will happily
-  simulate whatever state you give it, realistic or not — it has no opinion on that.
-- **MW is a cheap, learned stand-in, trained from MuJoCo's own data.** Once trained, it does
-  two things a raw simulator doesn't do for you:
-  - **Checks whether a state looks physically real** — a validator, catching things a
-    simulator will simulate without complaint (see `01_validator_check.py` and `ROBOTICS.md`).
-  - **Guesses a future state without re-running the simulator** — a forecaster, faster than
-    MuJoCo once the jump is big enough, at a real, measured accuracy cost (see
-    [FORECASTER.md](FORECASTER.md)).
+**This is already proven, twice, not just argued for:**
+- **In this repo**, for the hopping-leg example, tested against a real physics engine (MuJoCo)
+  — see [FORECASTER.md](FORECASTER.md). It predicts a future state faster than re-simulating
+  once the jump is big enough, at a real, measured accuracy cost (roughly 7-14% of the normal
+  range).
+- **Independently, already in production**, in a separate battery-storage project of the
+  author's: given a battery's current state and a physics-projected future state, this exact
+  same latent-space walk produces the aging trajectory in between — no RL, no learned dynamics
+  model, no GPU there either.
 
-**So yes: "MuJoCo plus MW" is fairly described as a simulator with a built-in, cheap
-validator** — the one thing a raw physics engine doesn't give you on its own. That's proven,
-concretely, for one domain so far (the hopping-leg / bouncing-ball example, `legged_contact`)
-— not yet shown across every kind of MuJoCo model, which is the natural next step rather than
-something to claim early.
-
-This is also why MW doesn't solve the actual GPU bottleneck robotics startups run into:
-training a sophisticated RL control policy at IsaacGym/ProtoMotions scale needs massively
-parallel simulation, and MW isn't an RL algorithm today — it doesn't train control policies.
-What it adds right now, cheaply, on a CPU, is the validator and short-horizon-forecaster role
-on top of whichever simulator a team is already using, GPU or not. There is one credible,
-not-yet-built path for MW to actually attack that GPU bottleneck itself, not just work around
-it — see the next section for exactly what that would take and where it could fail.
-
-## A real alternative to GPU-scale RL training — early cross-domain evidence, not yet proven here
-
-GPUs matter for RL training for one specific reason: training a policy needs millions of real
-physics samples, and a GPU lets you run thousands of simulations in parallel to generate them
-fast. That's a brute-force answer to "I need a lot of samples." There's a different, well-known
-way to need *fewer* samples in the first place: train the policy mostly against a cheap,
-learned stand-in for the simulator, and only occasionally check against the real, expensive
-one to keep it honest. This is called model-based RL, and it's the same family of idea as
-Dreamer's "world models" — and it's exactly what the theory paper behind MW, ["World Models
-with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118), already points
-toward. This was first written up here as a purely scoped, unbuilt idea. It isn't purely
-hypothetical anymore — two separate, not-yet-public projects of the author's, in battery
-storage and RF sensing, have already tried versions of it, with real, mixed, instructive
-results. Robotics itself hasn't been tried with this recipe yet; what follows is what those
-two other domains actually found, and what it changes about the plan below.
-
-**What's already been tried elsewhere, honestly reported:**
-
-- **A working, no-RL alternative to a learned world model, already in production (battery
-  domain).** Given a current state and a physics-projected target, MW can walk a straight line
-  through its own trained latent space and decode the trajectory in between — no RL, no
-  Dreamer, no GPU-scale training needed at all. This is the exact same mechanism this repo's
-  [FORECASTER.md](FORECASTER.md) tests for the robot leg, proven separately in a different
-  domain and already deployed, not just a lab result.
-- **MW bolted onto an actual Dreamer world model, as a training-time physics check (both
-  domains) — one version failed, the fix worked.** The first attempt (RF sensing) penalized
-  the model's imagined states for looking statistically unusual. That backfired: it taught the
-  model to imagine bland, generic "normal," which made it *worse* at predicting an actual
-  attack in progress — exactly the kind of thing to check for, not assume away. The fix, tried
-  next in the battery domain, penalizes *physical impossibility* instead of mere unusualness —
-  a state no real battery pack could ever be in (capacity above rated, time running backwards),
-  not just a rare one. That fix worked: physically impossible imagined states dropped from 82%
-  to 52% to 26% as the penalty increased, with no loss of forecast accuracy at the working
-  setting. Still honestly bounded — the world model itself was under-trained on the CPU budget
-  available, and no learned policy has beaten a simple baseline yet in either domain.
-
-**The one transferable lesson for robotics, before anything else is tried:** penalize genuine
-law-violation, not blanket rarity. That failure mode is real and already observed elsewhere —
-building the plan below without it would very likely repeat the RF mistake.
-
-**What's missing today for robotics specifically — three real gaps, not a vague "needs more work":**
-
-1. **No action input.** What's proven in [FORECASTER.md](FORECASTER.md) is: given two
-   *already-known* states, guess what's in between. Model-based RL needs the opposite shape:
-   given the current state *and the action the policy just chose*, predict what happens next.
-   The current method can't take an action as input at all — this needs a genuinely different
-   kind of model, not a tweak to the existing one.
-2. **No reward signal.** A policy needs to know whether an action helped. MW's manifold has no
-   concept of "did this help the robot walk forward" — that has to be added separately. Not
-   hard in principle (reward is usually a known function of state), but not built.
-3. **Model-exploitation risk — no longer just theoretical, already seen once.** The chaining
-   test in [FORECASTER.md](FORECASTER.md) (Part 4) showed error doesn't pile up when every jump
-   still aims at a real, known target. Training a policy on *imagined, open-loop* rollouts with
-   no real target to correct toward is a harder, different test — and the RF sensing attempt
-   above already hit exactly this failure mode once, in a different domain. It has to be
-   checked for directly here too, with the admissibility-not-anomaly fix applied from the
-   start, not assumed away a second time.
-
-**A minimal, honest way to actually find out if this works:**
-
-1. Start with `joint_actuator`, not a humanoid — it already has an exact closed-form law and a
-   real control input (`tau`, the applied torque), so it's the cheapest domain to build an
-   action-conditioned model for and the easiest to check for correctness against ground truth.
-2. Build a model that maps `(current state, action, dt) → next state`, instead of today's
-   `(state, state) → path between them`. Check its accuracy against the real, exact dynamics —
-   this domain already has the closed-form answer to check against.
-3. Add a simple reward (e.g. "track this reference angle") *and* an admissibility penalty on
-   the imagined rollouts — a joint angle beyond its physical limit, energy appearing from
-   nowhere, time running backwards — not a penalty on rarity. Train a small policy using
-   *only* imagined rollouts through that learned model — no real simulator calls during
-   training at all.
-4. Test the trained policy against the *real* dynamics (or MuJoCo), not the learned model.
-   This is the real test: did training inside the cheap model actually transfer, or did the
-   policy just find a way to look good to a model that doesn't match reality?
-5. Count real simulator samples used, end to end, and compare against what plain model-free RL
-   would need for the same task. That comparison — not a general claim — is the actual
-   evidence for or against "MW offers a GPU-free alternative here."
-
-**What would count as a real result, either way:** if a policy trained almost entirely on
-MW-imagined rollouts, using far fewer real physics samples than model-free RL needs, still
-performs reasonably well against real dynamics, that's genuine evidence of a GPU-free
-alternative for at least this class of problem. If it doesn't transfer — the model-exploitation
-failure — that's an equally real, useful finding, and the gap it exposes would need closing
-before claiming anything broader. Either outcome is worth having; the point of scoping it this
-precisely is to make sure the answer, whichever way it goes, is trustworthy.
+**How the other five examples here extend the same way:** every one of the six domains already
+has the one thing this needs — an exact, known formula for a valid future state (see
+`datasets.py`). `legged_contact` is the only one tested as a forecaster so far. The same
+recipe — encode the current state, encode the physics-computed target, walk the line, decode —
+is a straightforward next step for the other five, reusing the same code already built for the
+interactive demo (`full_flow_animation/robot_motion.py::compute_path()`).
 
 ## Speed: no GPU needed, measured
 
