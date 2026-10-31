@@ -16,20 +16,32 @@
       <span class="tagline">MW ROBOTICS DEMO</span>
     </div>
     <div id="scene-wrap">
-      <svg id="scene" viewBox="0 0 640 420"></svg>
+      <svg id="scene" viewBox="0 0 900 420"></svg>
       <div id="scanlines"></div>
     </div>
 
     <div id="controls">
-      <button id="btn-walk-l">&larr; WALK</button>
-      <button id="btn-hop">JUMP</button>
-      <button id="btn-lift">LIFT</button>
-      <button id="btn-walk-r">WALK &rarr;</button>
       <div class="ctl-row">
-        <label>HEAD / JOINT_ACTUATOR set-point</label>
+        <label>AGENTIC CHOREOGRAPHY — a task in plain words, routed through mw_agentic/</label>
+        <div style="display:flex; gap:8px;">
+          <input id="choreo-input" type="text" placeholder="create a dancing robot pair"
+                style="flex:1; background:#050818; color:var(--brand-bright); border:1px solid var(--brand-dim); padding:7px 9px; font-family:inherit; font-size:0.8rem;">
+          <button id="btn-choreograph" style="width:auto; margin:0;">RUN</button>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:6px;">Manual controls below drive UNIT A directly. The field
+      above drives both units via the agentic layer: a known recipe runs deterministically (no model
+      call); a novel request calls a model once, validates the result, and learns it for next time.</p>
+
+      <button id="btn-walk-l">&larr; WALK (A)</button>
+      <button id="btn-hop">JUMP (A)</button>
+      <button id="btn-lift">LIFT (A)</button>
+      <button id="btn-walk-r">WALK &rarr; (A)</button>
+      <div class="ctl-row">
+        <label>HEAD / JOINT_ACTUATOR set-point (A)</label>
         <input id="joint-slider" type="range" min="-1.4" max="1.4" step="0.05" value="0.8">
       </div>
-      <p class="hint">Click near the raised hand to make it reach (planar_arm). Every motion is
+      <p class="hint">Click near a unit's raised hand to make it reach (planar_arm). Every motion is
       decoded from a trained MW manifold, not hand-animated. Not a safety system.</p>
     </div>
   </div>

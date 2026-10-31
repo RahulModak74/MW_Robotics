@@ -12,3 +12,8 @@ venv/
 examples/outputs/
 data/
 *.pth
+
+# mw_agentic: local learning state and checkpoints, not shipped
+mw_agentic/workspace/rl/
+mw_agentic/recipes/learned/
+full_flow_animation/checkpoints/
