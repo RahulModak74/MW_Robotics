@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it and the MW theory document."
+title: "MW Robotics: physics-constrained Bayesian manifold learning, trimmed to a robotics PDE"
+version: 0.1.0
+license: Apache-2.0
+authors:
+  - family-names: Modak
+    given-names: Rahul
+    affiliation: "Bayesian Cybersecurity Pvt Ltd"
+  - family-names: Walawalkar
+    given-names: Rahul
+references:
+  - type: report
+    title: "Formal Theory of the Modak-Walawalkar Framework as Geometric Intelligence"
+    authors:
+      - family-names: Modak
+        given-names: Rahul
+      - family-names: Walawalkar
+        given-names: Rahul
+    doi: 10.5281/zenodo.19304813
+    url: "https://github.com/RahulModak74/MW_Geometric_Intelligence"
