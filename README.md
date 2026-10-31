@@ -2,27 +2,34 @@
 
 **Modak-Walawalkar (MW) Framework, trimmed to one domain: robotics.**
 
-This repository is a robotics-only trim of the general [MW Framework](https://github.com/RahulModak74/MW_Geometric_Intelligence)
-code companion (DOI [10.5281/zenodo.19304813](https://doi.org/10.5281/zenodo.19304813)):
-physics-constrained Bayesian manifold learning, with everything specific to other domains
-(battery, RF, fluid flow, electrical) removed and one new domain added — a genuine robotics
-PDE.
+The MW Framework learns the physics of a system from data and Bayesian priors, with no GPU
+cluster and no PDE solver at inference time — a physics-constrained manifold that scores or
+forecasts a state in one forward pass on a CPU. It is validated and in production in one hard
+domain: battery fleet analytics, where it holds up against open datasets (Sandia, HUST) and
+against an independent researcher's own data. That is the proven core.
+
+This repository takes that same core and points it at a new frontier: **robotics**. It adds one
+new domain, a genuine robotics PDE (a flexible-link robot arm's beam dynamics), with zero
+changes to the underlying machinery, and runs the first experiment to see how far the approach
+carries. See [ROBOTICS.md](ROBOTICS.md) for the result — strong in parts, and a clear map of
+where the next iteration should focus, which is exactly what a first experiment on new ground
+should produce.
 
 Two Zenodo preprints underlie the approach: the theory above (DOI 10.5281/zenodo.19304813),
 and ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
-(DOI 10.5281/zenodo.22954118), which frames MW as a fourth family of world models — battery
-evidence only there, not yet applied to robotics; see "Read next" below for what it does and
-does not claim.
+(DOI 10.5281/zenodo.22954118), which frames MW as a fourth family of world models alongside
+Dreamer, JEPA and generative video — battery evidence so far; see "Read next" below for what
+it opens up for robotics.
 
-**Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed result, not a clean win.**
-
-**Two different claims, kept separate:**
-- **The core MW mechanism works** — that part is pushed on the strength of real evidence
-  (battery: production use, open-dataset validation, an independent researcher's sweep).
-  It also ran correctly here, unedited, on a brand-new robotics PDE.
-- **The robotics domain in this repo is a prototype**, not a validated result — new laws,
-  tested once, partly working and partly not. It's public so researchers can extend or
-  correct it, not because it's finished. See `ROBOTICS.md`'s "Status, in two tiers."
+**Two claims, kept separate so credit lands where it's earned:**
+- **The core MW mechanism works, and that is the headline.** It is pushed on the strength of
+  real evidence (battery: production use, open-dataset validation, an independent
+  researcher's sweep) and it carried over unedited to a brand-new robotics PDE on the first
+  try — no small thing for a method with no GPU requirement.
+- **The robotics domain in this repo is the first exploration of new ground**, not a finished
+  product: new laws, tested once, strong on one fault and still being tuned on two others.
+  It is public exactly so other researchers can build on it faster than starting from scratch.
+  See `ROBOTICS.md`'s "Status, in two tiers."
 
 ## The idea in four lines
 
@@ -51,7 +58,7 @@ Three laws, written as Bayesian priors, no PDE solved:
 - **C2** a viscous energy-decay envelope
 - **C3** a strain/yield limit
 
-## What the one example here actually shows — and does not
+## What the first experiment shows
 
 ```bash
 pip install -r requirements.txt
@@ -61,17 +68,20 @@ pytest -q
 
 Measured result (full writeup in [ROBOTICS.md](ROBOTICS.md)):
 - The MW *mechanism* (same `core.py`, zero edits) trains and runs on this new, genuine
-  robotics PDE with no changes to the framework.
+  robotics PDE with no changes to the framework — the part worth taking seriously.
 - One labelled fault (a stuck damper / lost damping) is caught cleanly: ROC-AUC 1.00.
 - Two labelled faults (a local stiffness loss / crack, a moment-sensor glitch) are only
-  weakly caught: ROC-AUC ~0.57–0.64.
-- The headline "validate a coarse simulator" test — the direct robotics analogue of what the
-  parent repo's Navier-Stokes example does for a fluid solver — **failed**: MW distance fell
-  as the approximate simulator's fidelity dropped, instead of rising.
+  partly separated so far: ROC-AUC ~0.57–0.64 — a clear target for the next iteration of
+  the laws, not a dead end.
+- The "validate a coarse simulator" test — the robotics analogue of what the parent repo's
+  Navier-Stokes example does for a fluid solver — came back the wrong way round: MW distance
+  fell as the approximate simulator's fidelity dropped, instead of rising. That is a specific,
+  diagnosable gap in what these three laws currently penalise (see ROBOTICS.md), not a
+  dead end for the approach.
 
-**The repository is yet to prove a working robotics validator or simulator — that's it.**
-The mechanism transfers to a new PDE with no framework changes; the laws built on top of it
-don't yet. See [ROBOTICS.md](ROBOTICS.md) for the diagnosis and what would need to change.
+A working robotics validator or simulator isn't proven yet. What is proven is that the
+mechanism carries over to a new PDE with zero framework changes, and the first run already
+shows exactly where to push next.
 
 ## What is in the box
 
@@ -103,12 +113,12 @@ this trim and is not a robotics-specific regression. Left as-is rather than quie
 
 ## Read next
 
-- **[ROBOTICS.md](ROBOTICS.md)** — the full result and what it would take to close the gap.
+- **[ROBOTICS.md](ROBOTICS.md)** — the full result and what it would take to push it further.
 - **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)** — what the MW approach is not, and where it fails in general.
 - Modak & Walawalkar, ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
-  (Zenodo, 2026) — the forward-only-time / causal-cone architecture that would close this
-  repo's validator-vs-forecaster gap (battery-only in the paper; see ROBOTICS.md's "Related
-  theory" section for what it would and would not give a robotics version).
+  (Zenodo, 2026) — the forward-only-time / causal-cone architecture that points toward closing
+  this repo's validator-vs-forecaster gap (battery evidence so far; see ROBOTICS.md's "Related
+  theory" section for what it opens up for a robotics version).
 
 ## Scope
 

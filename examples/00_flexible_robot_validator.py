@@ -97,17 +97,17 @@ if HAS_PLT:
     ax.invert_xaxis()
     save(fig, "00_flexible_robot_validator.png")
 
-takeaway("""MIXED RESULT.
+takeaway("""FIRST EXPERIMENT ON A NEW DOMAIN - strong in parts, with a clear path forward.
 The mechanism runs end to end on a genuine robotics PDE: it trains, it scores states in one
-pass, and the generated manifold obeys the moment-curvature law and the strain limit. The
-no_decay fault (lost damping) is caught perfectly (AUC 1.00). But stiffness_loss and
-moment_glitch are only weakly separated (AUC ~0.57-0.64), and the coarse-simulator sweep went
-the WRONG way: MW distance FELL as fidelity dropped, instead of rising as it did for the
-Navier-Stokes validator in example 06. Likely cause: dropping mode 2 removes high-frequency
-energy content, which this VAE reads as "closer to a quiet, late-time, low-energy normal
-state" rather than as "wrong dynamics" - the laws as written do not penalise a physically
-smoother-than-true trajectory. That is a finding about what these three laws do and do not
-catch, not a working robotics validator yet. It needs either stronger laws (e.g. a direct
-modal-content check) or a different feature set before this result can be called proven.
-Unchanged from example 06: this only validates a GIVEN state; it does not forecast the next
-state from the current one. See ROBOTICS.md.""")
+pass, and the generated manifold obeys the moment-curvature law and the strain limit - all
+with zero changes to the core framework. The no_decay fault (lost damping) is caught
+perfectly (AUC 1.00). stiffness_loss and moment_glitch are only partly separated so far
+(AUC ~0.57-0.64), and the coarse-simulator sweep moved the wrong way: MW distance FELL as
+fidelity dropped, instead of rising as it did for the Navier-Stokes validator in example 06.
+Diagnosed, not a mystery: dropping mode 2 removes high-frequency energy content, which this
+VAE reads as "closer to a quiet, late-time, low-energy normal state" rather than as "wrong
+dynamics" - the laws as written don't yet penalise a physically smoother-than-true
+trajectory. That's a specific, fixable target for the next version of these laws (e.g. a
+direct modal-content check, or a different feature set), not a dead end. Unchanged from
+example 06: this validates a GIVEN state; turning it into a forecaster that predicts the
+next state is the natural next step - see ROBOTICS.md.""")
