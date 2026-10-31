@@ -14,7 +14,7 @@ and ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zeno
 evidence only there, not yet applied to robotics; see "Read next" below for what it does and
 does not claim.
 
-**Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed, honest result, not a clean win.**
+**Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed result, not a clean win.**
 
 **Two different claims, kept separate:**
 - **The core MW mechanism works** — that part is pushed on the strength of real evidence
@@ -92,7 +92,7 @@ examples/
 docs/
   LIMITATIONS.md   general framework limits — still fully applicable here
 tests/             fast pytest suite (one known pre-existing flaky test, see below)
-ROBOTICS.md        the honest writeup: what is and is not shown
+ROBOTICS.md        what is and is not shown
 ```
 
 ## Known issue carried over from the parent repo
@@ -103,7 +103,7 @@ this trim and is not a robotics-specific regression. Left as-is rather than quie
 
 ## Read next
 
-- **[ROBOTICS.md](ROBOTICS.md)** — the full, honest result and what it would take to close the gap.
+- **[ROBOTICS.md](ROBOTICS.md)** — the full result and what it would take to close the gap.
 - **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)** — what the MW approach is not, and where it fails in general.
 - Modak & Walawalkar, ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
   (Zenodo, 2026) — the forward-only-time / causal-cone architecture that would close this

@@ -12,7 +12,7 @@ The approximate simulator is dialled by a fidelity knob (0 = mode-2 dropped
 entirely plus a mistuned frequency, 1 = exact). Its error should grow as
 fidelity falls. A good validator's risk should grow with it too.
 
-HONEST SCOPE: this checks whether a GIVEN state is physical. It does not
+SCOPE: this checks whether a GIVEN state is physical. It does not
 predict the NEXT state from the current one - see ROBOTICS.md for what a
 forward-time forecaster (the Isaac-Sim-adjacent claim) would still need.
 

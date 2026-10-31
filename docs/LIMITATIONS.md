@@ -1,9 +1,9 @@
 # Limitations — read before deploying
 
-Honest scope, inherited from the general [MW Framework](https://github.com/RahulModak74/MW_Geometric_Intelligence)
+Scope, inherited from the general [MW Framework](https://github.com/RahulModak74/MW_Geometric_Intelligence)
 this repo is trimmed from. Each point was observed while building that repo's seven examples;
 the numbered examples referenced below (00, 01, 05, 06) live there, not in this trim — this
-repo's own result is in [ROBOTICS.md](../ROBOTICS.md), with its own honest, mixed findings.
+repo's own result, with its own mixed findings, is in [ROBOTICS.md](../ROBOTICS.md).
 
 **1. Physics does not always beat a plain VAE.**
 On clean, plentiful data with simple laws, they tie (examples 01 and 06). The prior pays off with dirty or sparse data, for learning constants, and for laws the data rarely exercises.

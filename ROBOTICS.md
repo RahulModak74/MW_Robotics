@@ -1,4 +1,4 @@
-# Robotics in MW_Robotics — what this is, honestly (2026-10-31)
+# Robotics in MW_Robotics — status and limits (2026-10-31)
 
 This folder is `MW_Framework` plus one new domain: `mw_framework/domains/flexible_robot.py`,
 the Euler-Bernoulli beam PDE that governs a flexible-link robot arm or a soft-robot segment
@@ -16,12 +16,12 @@ That mechanism also ran correctly here, unedited, on a brand-new robotics PDE it
 seen code for. That transfer is a real, demonstrated result — not an aspiration.
 
 **Tier 2 — the robotics domain itself: a prototype, not a result.** `flexible_robot.py`'s
-three physics laws and the beam dataset are new, untested-by-anyone-else code. The honest
-status is "mechanism confirmed to run; whether these specific laws make a USEFUL robotics
-validator is open and partly negative" (one fault caught, two weak, one headline test
-backwards — see below). This is pushed as a prototype and an invitation: the repo, the bug
-found while building it, and the failure are all public so a researcher can pick it up,
-disagree with the laws, or fix them, rather than taking "it works" on faith.
+three physics laws and the beam dataset are new, untested-by-anyone-else code: the mechanism
+runs, but whether these specific laws make a useful robotics validator is still open, and
+partly negative (one fault caught, two weak, one headline test backwards — see below). This
+is pushed as a prototype and an invitation: the repo, the bug found while building it, and
+the failure are all public so a researcher can pick it up, disagree with the laws, or fix
+them.
 
 Keep these two claims separate when talking about this repo: **"the MW mechanism generalizes"
 is supported; "this robotics validator works" is not yet.**
@@ -57,14 +57,13 @@ is supported; "this robotics validator works" is not yet.**
    model, trained the way the battery forecaster was (on trajectories, scored against
    held-out ground truth over time), and it does not exist here yet.
 
-## What this is evidence of, stated carefully
-The MECHANISM is portable to a genuine, novel robotics PDE with no changes to the core
-framework code — that much is now demonstrated, not just argued. Whether a USEFUL robotics
-validator or forecaster can be built this way is still open: this first attempt caught one
-fault well and two poorly, and failed its own version of example 06's headline test. The
-honest next step is to fix the laws (or the feature set) so the fidelity-sweep test passes in
-the right direction, re-test, and only then write up a result — the same standard already
-applied to the battery evidence in PYBAMM_ALTERNATIVE/EVIDENCE.md.
+## What this is evidence of
+The mechanism is portable to a genuine, novel robotics PDE with no changes to the core
+framework code. Whether a useful robotics validator or forecaster can be built this way is
+still open: this first attempt caught one fault well and two poorly, and failed its own
+version of example 06's headline test. Next step: fix the laws (or the feature set) so the
+fidelity-sweep test passes in the right direction, re-test, and only then write up a result
+— the same standard applied to the battery evidence in PYBAMM_ALTERNATIVE/EVIDENCE.md.
 
 ## Related theory: what would close gap 3 above
 
@@ -75,7 +74,6 @@ manifold of admissible states with a forward-only time axis, and *forecast* by w
 manifold between the current state and a physics-projected target, rather than checking a
 single given state.
 
-Read plainly, not oversold:
 - **This has not been applied to robotics.** The paper's only evidence is battery (an EV
   fleet analytics deployment, plus an external validation against a published SEI-cracking
   study where the result was reproduced on the study author's own data and confirmed by
@@ -87,7 +85,7 @@ Read plainly, not oversold:
 - **The Lorentzian cone (the part closest to this repo's anomaly work) is tested on
   synthetic data and injected faults only**, not recorded real fast-fade events, and about
   5% of normal transitions fall outside the cone by construction (95th-percentile
-  calibration) — the same kind of honest ceiling this repo's own fault-detection AUCs have.
+  calibration) — the same kind of ceiling this repo's own fault-detection AUCs have.
 
 Adapting this pattern to `FlexibleRobotVAE` — a forward-only time axis, a dedicated clock
 encoder separate from the state encoder, and a target state fed in from the beam's known

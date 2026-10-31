@@ -39,7 +39,7 @@ WHY this instead of simulating the PDE every time?
     laws above and scores any new state - from a real sensor or from a cheap
     simulator - in one encoder-decoder pass, O(n) in the number of features.
 
-HONEST SCOPE (see docs/LIMITATIONS.md and ROBOTICS.md)
+SCOPE (see docs/LIMITATIONS.md and ROBOTICS.md)
     This validates whether a GIVEN state is physical. It does not forecast
     the NEXT state from the current one - it is not yet a drop-in replacement
     for a forward-time robot simulator. See ROBOTICS.md for what would close
