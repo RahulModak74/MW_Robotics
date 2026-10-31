@@ -9,14 +9,18 @@ PDE solver at inference time. It is validated and in production in one hard doma
 fleet analytics, where it holds up against open datasets (Sandia, HUST) and against an
 independent researcher's own data. That is the proven core.
 
-This repository takes that same core and points it at a new frontier: **robotics**. It now
-spans **six genuinely different robotics physics systems** — a PDE, two ODEs, a pure
-kinematic chain, a nonholonomic constraint, and a hybrid/impact dynamics problem — with
-**zero changes to the underlying machinery**. Same `core.py`, same Pyro SVI training loop,
-same `MWDetector` API, six times over. See [ROBOTICS.md](ROBOTICS.md) for the full result —
-strong in parts, with a clear, written-down map of where the next iteration should focus
-([FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)), which is exactly what a first wave of experiments
-on new ground should produce.
+This repository takes that same core and points it at a new frontier: **robotics**, testing MW
+in **both roles** — as a **validator** (does a given state look physical?) and as a
+**forecaster** (can a future state be predicted without running a solver?). It spans **six
+genuinely different robotics physics systems** — a PDE, two ODEs, a pure kinematic chain, a
+nonholonomic constraint, and a hybrid/impact dynamics problem — with **zero changes to the
+underlying machinery**. Same `core.py`, same Pyro SVI training loop, same `MWDetector` API, six
+times over as a validator; one of them (`legged_contact`) has now also been tested as a
+forecaster **against a real third-party simulator**, MuJoCo (Apache-2.0), not just synthetic
+data. See [ROBOTICS.md](ROBOTICS.md) for the validator result and [FORECASTER.md](FORECASTER.md)
+for the forecaster one — both strong in parts, both with a written-down map of what to do next
+([FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)), which is exactly what a first wave of experiments on
+new ground should produce.
 
 Two Zenodo preprints underlie the approach: the theory above (DOI 10.5281/zenodo.19304813),
 and ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
@@ -145,7 +149,12 @@ examples/
 docs/
   LIMITATIONS.md   general framework limits — still fully applicable here
 tests/             fast pytest suite (one known pre-existing flaky test, see below)
-ROBOTICS.md        what is and is not shown, across all six domains
+mujoco_experiments/  MW tested against a REAL third-party simulator (MuJoCo, Apache-2.0):
+  bounce_env.py        shared MuJoCo utilities, with two real bugs fixed and documented inline
+  01_validator_check.py  does MW validate real MuJoCo output? (domain-mismatch finding)
+  02_forecaster_check.py  can MW forecast forward in time against MuJoCo's own stepping?
+ROBOTICS.md        what is and is not shown, across all six domains, as a validator
+FORECASTER.md      the forecaster result against MuJoCo: three bugs fixed, a real speed-accuracy tradeoff
 FIXING_THE_GAPS.md  concrete, testable next steps for every gap found so far
 ```
 
@@ -157,13 +166,14 @@ this trim and is not a robotics-specific regression. Left as-is rather than quie
 
 ## Read next
 
-- **[ROBOTICS.md](ROBOTICS.md)** — the full result across all six domains and what it would take to push further.
-- **[FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)** — specific, testable fixes for every gap found, in the order to try them.
+- **[ROBOTICS.md](ROBOTICS.md)** — the full validator result across all six domains and what it would take to push further.
+- **[FORECASTER.md](FORECASTER.md)** — MW as a forecaster against real MuJoCo output: three bugs found and fixed, a genuine speed-accuracy tradeoff, and what it does not yet show.
+- **[FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)** — specific, testable fixes for every validator gap found, in the order to try them.
 - **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)** — what the MW approach is not, and where it fails in general.
 - Modak & Walawalkar, ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
-  (Zenodo, 2026) — the forward-only-time / causal-cone architecture that points toward closing
-  this repo's validator-vs-forecaster gap (battery evidence so far; see ROBOTICS.md's "Related
-  theory" section for what it opens up for a robotics version).
+  (Zenodo, 2026) — the forward-only-time / causal-cone architecture behind the forecaster idea;
+  FORECASTER.md's experiment is a simpler, related test, not a reproduction of this paper's
+  actual mechanism (see ROBOTICS.md's "Related theory" section for the distinction).
 
 ## Scope
 

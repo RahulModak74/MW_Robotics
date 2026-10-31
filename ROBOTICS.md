@@ -8,6 +8,13 @@ diffusion). Run any of `examples/00_flexible_robot_validator.py` through
 `examples/05_actuator_thermal_validator.py`. See [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)
 for concrete, testable next steps on every gap below.
 
+The project now tests MW in **both roles against a real third-party simulator**: as a
+**validator** (does a given state look physical?) and as a **forecaster** (can a future state
+be predicted without running a solver?), both against MuJoCo (Apache-2.0) on `legged_contact`.
+See [FORECASTER.md](FORECASTER.md) for the full, bug-by-bug account — three real bugs were
+found and fixed to get trustworthy numbers, and the forecaster result is a genuine, measured
+speed-accuracy tradeoff, not an unconditional win.
+
 ## Status, in two tiers — read this before anything else
 
 **Tier 1 — core MW mechanism: a proven result, and the reason this is worth building on.**
@@ -79,13 +86,24 @@ only one that is too energetic or inconsistent.
 [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md) proposes a concrete one-line fix, already supported
 by existing code (`core.py::bound()` already accepts a two-sided band).
 
-## Not yet a forecaster
+## Forecaster: the first test, with a real result (not just a plan anymore)
 
-All six domains are validators: they check whether a *given* state is physical. None of them
-yet predicts the *next* state from the current one, the way a robot simulator (or the battery
-SoH geodesic walk in the production battery product) does. Turning any of these into a
-forward-time model that stands in for a robotics PDE/ODE solver is the natural next step —
-see "Related theory" below for the architecture that points the way.
+All six domains above are validators: they check whether a *given* state is physical. One of
+them — `legged_contact` — has now also been tested as a **forecaster**: trained directly on
+real MuJoCo rollouts, predicting a future state from a current one via latent-space
+interpolation, with no solver involved in the prediction itself. Full account, including three
+real bugs found and fixed, in [FORECASTER.md](FORECASTER.md). The short version:
+
+- A single hop of up to ~200 MuJoCo steps (0.4s of real flight) can be predicted faster than
+  MuJoCo itself re-steps that interval, once the hop is large enough (~50-100 steps) that MW's
+  roughly constant per-hop cost beats MuJoCo's linearly-scaling cost — at an accuracy cost of
+  roughly 7-14% of the state's range, growing with hop size.
+- This is **not yet** "MW replaces MuJoCo as a forward simulator": only one domain, one
+  held-out trajectory, and single hops between two *known* real states, not chained forecasts
+  feeding on their own output. That chaining test is the next one that would actually settle
+  the claim either way — see FORECASTER.md's "Next steps".
+- The other MuJoCo-mappable domains (`joint_actuator`, `planar_arm`, `mobile_robot`) have not
+  been tried as forecasters yet.
 
 ## Performance: no GPU required, measured
 
@@ -110,7 +128,7 @@ changed): GPU 105.6 s (527.7 ms/epoch) vs. CPU 181.7 s (908.4 ms/epoch) — abou
 on CPU, and still 3 minutes end to end on a laptop. Training doesn't need a GPU; it's just
 somewhat faster with one.
 
-## Related theory: the architecture for closing the "not yet a forecaster" gap
+## Related theory: the architecture behind the forecaster experiment above
 
 Modak & Walawalkar, "World Models with an Irreversible Time Axis" (Zenodo, DOI
 [10.5281/zenodo.22954118](https://doi.org/10.5281/zenodo.22954118), 2026) proposes exactly the
@@ -122,24 +140,29 @@ imagination (Dreamer), joint-embedding prediction (JEPA) and generative video (G
 — none of which can express "this state cannot be reached from that one."
 
 What it's shown so far, and what's still ahead:
-- **Proven in battery, not yet applied to robotics.** The paper's evidence is an EV fleet
-  analytics deployment, plus an external validation against a published SEI-cracking study
-  where the result was reproduced on the study author's own data and confirmed by them.
-  Building the robotics version is the natural next step, not a result either repo has yet.
+- **Proven in battery; a first, simpler version now tried in robotics.** The paper's own
+  evidence is an EV fleet analytics deployment, plus an external validation against a published
+  SEI-cracking study where the result was reproduced on the study author's own data and
+  confirmed by them. [FORECASTER.md](FORECASTER.md)'s experiment is related but smaller: plain
+  straight-line latent interpolation between two *known* real states, with no forward-only time
+  axis, no dedicated clock encoder, and no physics-projected target — none of the paper's actual
+  mechanism is implemented yet. It is evidence the general idea (walk the manifold instead of
+  solving) can work at all for a robotics system, not a reproduction of the paper's architecture.
 - **Even in the paper, the manifold isn't asked to do everything alone.** Its own Limitations
   section notes forecast *endpoints* still come from an external physics model; the manifold
-  shapes the path between them. For any of these six domains, that means pairing the manifold
-  with something that says where a trajectory ends up — a well-scoped, tractable next piece.
+  shapes the path between them. The same is true of the simpler experiment here: both endpoints
+  were real, already-known states, not states supplied by an independent predictor — forecasting
+  from a single current state still needs that missing piece.
 - **The Lorentzian cone (closest to this repo's anomaly work) has been tested on synthetic
   data and injected faults**, with real signal: normal transitions cluster inside the cone,
   injected fast-fade events cluster outside it, and the ~5% false-positive rate matches its
   95th-percentile calibration exactly as designed. Testing on recorded real fast-fade events
   is the next step there too.
 
-Adapting this pattern to any of the six domains here — a forward-only time axis, a dedicated
-clock encoder separate from the state encoder, and a target state fed in from the system's
-own known dynamics — is the concrete next step toward a real forecaster, not just a
-validator. `joint_actuator` and `legged_contact` are the most tractable starting points:
+Building the paper's actual mechanism — a forward-only time axis, a dedicated clock encoder
+separate from the state encoder, and a target state fed in from the system's own known dynamics,
+instead of a second known real state — is the concrete next step toward a genuine forecaster.
+`joint_actuator` and `legged_contact` are the most tractable starting points:
 both already have an exact, known time-evolution law to supply the target state from.
 
 ## Reproduce
