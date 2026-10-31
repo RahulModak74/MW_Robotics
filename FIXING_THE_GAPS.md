@@ -1,107 +1,88 @@
-# Fixing the gaps — concrete next steps, not just a list of problems
+# Fixing the gaps — concrete next steps
 
-This is the companion to `ROBOTICS.md`. That file reports what six robotics domains show
-today; this one proposes specific, testable fixes for the three patterns that showed up
-across them, in the order a researcher should probably try them. Every suggestion below
-references code that already exists in this repo — none of it needs new infrastructure.
+This is the companion to `ROBOTICS.md`. That file reports what the six robot examples show
+today. This one is about what to actually try next, for the three weak spots that showed up.
+Every suggestion below uses code that's already in this repo — nothing new needs to be built.
 
-## Pattern 1: faults that are a *scaled* change to one channel score weakly
+## Gap 1: small, scaled-down faults are hard to catch
 
-Across every domain, the fault that is a proportional multiplier on one reading —
-`friction_increase` (joint, AUC 0.55), `link_bent` (arm, 0.67), `hotspot_short` (thermal,
-0.57) — scores far below the faults that are a structural break (no_settle, overspeed,
-bad_restitution: all 0.97–1.00). That is a consistent signature, not three unrelated weak
-spots, and it points at one mechanism.
+Across every example, a fault that's just "a bit more/less of something" — more friction in
+the joint (score 0.55), a bent arm link (0.67), a hot spot in a motor winding (0.57) — scores
+much worse than a fault that clearly breaks the physics (0.97 to 1.00). This same pattern shows
+up in three unrelated examples, so it's worth chasing down.
 
-**Likely cause.** The anomaly's injected scale factor is sampled from a range (e.g.
-`friction_increase` cuts `omega` by 30–55%) that can land inside the natural spread of
-normal data, because normal data already varies a lot across `theta_ref`, `t`, position
-along the beam, etc. A fault that is "30% off" is only detectable if 30% off is actually
-rare in the training distribution at that particular combination of the other features.
+**Likely reason.** The fault is sized as a percentage change (e.g. the friction fault cuts
+speed by 30-55%), and normal data already varies quite a bit depending on other conditions. A
+"30% off" reading only stands out if 30% off is actually unusual for that particular
+combination of conditions — if normal readings already swing that much, the fault blends in.
 
-**What to try, in order:**
-1. **Positive control first, same principle used for the Rutooj sweep in `PYBAMM_ALTERNATIVE`.**
-   Before changing anything, inject the *same* fault at 2–3x the magnitude (e.g. cut
-   `omega` by 80% instead of 30–55%) and confirm the AUC rises toward 1.0. If it does, the
-   current weak AUC is a real sensitivity limit at that fault size, not a bug — useful to
-   know and report as such. If it does NOT rise, something else is wrong (see 3 below).
-2. **Check `feature_attribution()` for these fault rows specifically**
-   (`det.feature_attribution(df)` in `detector.py`, already built). If the top driver it
-   names is NOT the channel the fault actually touched, the manifold is explaining the
-   anomaly away through a different coordinate instead of flagging the right one — the
-   same failure mode the Lorentzian tutorial's "split encoder" lesson warns about
-   (`BATTERY_RIEMANNIAN_LORENTZIAN.py`'s header: a single encoder lets an anomaly signal
-   hide in the wrong latent coordinate).
-3. **Compare against a naive single-feature threshold** (e.g. z-score of `omega` alone, or
-   of the single law residual most relevant to the fault). If the naive threshold beats the
-   full MW distance, the extra flexibility of the manifold is absorbing exactly the signal
-   that should trigger it — the fix is a tighter `law_tolerance` on that specific
-   constraint, not a bigger model.
-4. **Only after 1–3**, consider shrinking `latent_dim` for the affected domain (less room
-   for the decoder to "explain away" a subtle anomaly) or tightening `obs_sigma` on the
-   one most diagnostic feature.
+**What to try, in this order:**
+1. **First, test with a bigger version of the same fault** (e.g. cut speed by 80% instead of
+   30-55%) before touching any code. If the score jumps toward 1.0, the current weak score is
+   just a real limit on how small a fault can be and still get caught — worth knowing and
+   saying so, not a bug to fix. If it does *not* improve, something else is wrong — move to
+   step 3.
+2. **Check which feature the model blames for these fault cases** (`det.feature_attribution(df)`,
+   already built into `detector.py`). If it's pointing at the wrong feature — not the one the
+   fault actually touched — the model is explaining the anomaly away through some other
+   number instead of flagging the right one.
+3. **Compare against a simple baseline**: just check if that one feature (or the one most
+   relevant physics-rule error) looks unusual on its own, no model needed. If that simple
+   check actually beats the full model, the model has too much flexibility and is absorbing
+   the exact signal that should trip the alarm — the fix is a tighter rule, not a bigger model.
+4. **Only after trying 1-3**, consider giving the model less room to work with (a smaller
+   latent space) or tightening how much sensor noise it's allowed to assume on the one most
+   telling feature.
 
-## Pattern 2: the prior-sampled (generated) states satisfy their own law 10–30x looser than the training noise — in the pure-kinematic and impact domains only
+## Gap 2: made-up "normal" states loosely satisfy their own physics rules
 
-`flexible_robot`, `joint_actuator` and `actuator_thermal` (all ODE/PDE domains, laws tied
-to a differential equation) generate states whose law residual is within about 1x the
-training sensor noise. `planar_arm`, `mobile_robot` and `legged_contact` (pure algebraic/
-kinematic identities, or a ballistic+impact law) generate states 10–30x looser. Anomaly
-detection still works well in two of those three (`legged_contact` 0.99+, `mobile_robot`
-0.73–1.00); it is a separate finding from Pattern 1, about what the unconditional prior
-produces, not about fault sensitivity.
+`flexible_robot`, `joint_actuator`, and `actuator_thermal` (the ones governed by a differential
+equation) generate made-up states that stick close to the physics, about as close as real
+sensor noise. `planar_arm`, `mobile_robot`, and `legged_contact` (pure geometry, or a
+bounce/impact rule) generate states that are 10-30x looser. Fault detection still works well
+on two of those three, so this is a separate issue from Gap 1 — it's about what the model
+generates by default, not about missing faults.
 
-**Likely cause, two candidates to test, not yet distinguished:**
-- **Scale mismatch.** `planar_arm`'s `x,y` range over roughly ±1.8 and `legged_contact`'s
-  `z,vz` range over a few units; a `law_tolerance` of 0.03 is a much smaller fraction of
-  that range than it is of the beam's or joint's more tightly-scaled features. Check
-  `obs_sigma` and the constraint tolerance against the actual per-feature standard
-  deviation of the training data (`MWNormaliser` already computes this) before assuming the
-  architecture is at fault.
-- **Latent capacity in low-data regions.** `docs/LIMITATIONS.md` point 4 already documents
-  this exact risk: "too many [latent dims], and the decoder invents states in regions with
-  no data; geodesics will cut through them." `geometry.py::path_support()` exists
-  specifically to check this — run it on these three domains before assuming it's a
-  tolerance problem rather than a dimensionality one.
+**Two possible reasons, not yet tested against each other:**
+- **A scale mismatch.** `planar_arm`'s numbers range over about ±1.8, `legged_contact`'s over
+  a few units — a fixed tolerance can be a much bigger or smaller fraction of the real range
+  depending on the example. Worth checking the actual spread of each feature before assuming
+  the model itself is at fault.
+- **Too much room in the model for these three.** `docs/LIMITATIONS.md` already warns about
+  this exact risk: give the model more capacity than the system actually needs, and it starts
+  inventing states in places with no real data to anchor it. There's already a function,
+  `path_support()`, built to check for exactly this.
 
 **What to try, in order:**
-1. Run `path_support()` (already in `geometry.py`) on `PlanarArmVAE`, `MobileRobotVAE`,
-   `HoppingContactVAE` to see whether generated points actually fall in sparsely-trained
-   latent regions.
-2. If so, reduce `latent_dim` for these three (currently 5, 5, 4) toward the system's true
-   degrees of freedom (`planar_arm` has 4 independent inputs — `theta1, theta2, theta1dot,
-   theta2dot` — everything else is derived; `legged_contact` has 2 — `t, v0` — plus `e`).
-3. If not, recheck `obs_sigma` scaling per feature against each domain's actual data range,
-   the same check `docs/LIMITATIONS.md` point 2 recommends ("start loose, tighten while
-   watching held-out AUC").
+1. Run `path_support()` (already in `geometry.py`) on the arm, wheeled-robot, and hopping-leg
+   examples to see if the made-up points are landing in parts of the model with little real
+   training data.
+2. If so, give the model less room to work with for these three (fewer latent dimensions,
+   closer to how many numbers the system actually needs to describe its state — the arm needs
+   4, the hopping leg needs 2).
+3. If not, re-check the noise tolerance for each feature against its real-world spread, same
+   advice as `docs/LIMITATIONS.md` point 2: start loose, then tighten while watching accuracy.
 
-## Pattern 3: the beam's coarse-simulator test moved the wrong way (already in ROBOTICS.md)
+## Gap 3: the beam's coarse-simulator test came out backwards (also in ROBOTICS.md)
 
-Documented there as: dropping a vibration mode removes energy, and the beam's current laws
-don't penalise a trajectory that is too *smooth*, only one that is too energetic or
-inconsistent. This one has a concrete, small fix already available in the codebase:
+A coarse, low-detail simulator drops a vibration mode, which removes energy from the system.
+The beam's current rules only flag *too much* unexplained energy, not a trajectory that's
+suspiciously quiet. There's already a small, ready-to-try fix:
 
-**`core.py::bound()` already accepts both `low` and `high`.** The beam's current C2 is
-one-sided: `bound("c2_energy_envelope", excess - ceiling, high=0.0, ...)` only penalises
-*exceeding* the decay envelope. Replacing it with a narrow two-sided band around the
-expected decay curve —
-`bound("c2_energy_envelope", excess, low=0.9*ceiling, high=1.1*ceiling, ...)` (tune the
-0.9/1.1 width against held-out normal data first) — would also penalise a trajectory that
-decays unnaturally fast, which is exactly what the coarse simulator with mode 2 dropped
-does. This is a one-line change to test, not new infrastructure. Re-run
-`examples/00_flexible_robot_validator.py`'s coarse-fidelity sweep after making it, and
-check the direction flips the right way before declaring it fixed.
+The code that checks this (`core.py::bound()`) already supports a two-sided check — low and
+high. Right now the beam only uses the high side: it flags energy *above* the expected decay
+curve, but not below it. Switching to a narrow band on both sides of the expected curve would
+also catch a trajectory that decays unnaturally fast — exactly what the coarse simulator does.
+This is a one-line change to try, not new code. After making it, re-run
+`examples/00_flexible_robot_validator.py`'s coarse-simulator test and check that the result
+now points the right direction before calling it fixed.
 
-## How to tell a fix actually worked
+## How to tell if a fix actually worked
 
-Use the same standard already applied to the battery evidence in
-`PYBAMM_ALTERNATIVE/EVIDENCE.md`, not a single improved number:
-1. **Re-run with a different seed.** A single-seed AUC jump from 0.57 to 0.85 could be
-   retraining noise; check it holds across at least 3 seeds before writing it up.
-2. **Re-run the positive control alongside the real fix**, so a change that only works
-   because the fault got easier (bigger injected magnitude) is distinguishable from a change
-   that works because the model actually improved at the original magnitude.
-3. **Report the faults that stay weak, not just the ones that improve.** The honest
-   write-up style this repo already uses (see `ROBOTICS.md`) is the standard to hold a fix
-   to as well — a partial improvement reported plainly is more useful to the next person
-   than a single good number with the rest quietly dropped.
+Don't trust a single improved number — the same standard already used for the battery work:
+1. **Re-run with a different random seed.** A jump from 0.57 to 0.85 on one seed could just be
+   noise from retraining. Check it holds across at least 3 seeds before writing it up.
+2. **Re-run the "bigger fault" test alongside the real fix**, so you can tell whether an
+   improvement is because the model actually got better, or just because the test got easier.
+3. **Report what's still weak, not just what improved.** A partial improvement, reported
+   honestly, is more useful to the next person than one good number with the rest left out.

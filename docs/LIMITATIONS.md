@@ -1,36 +1,54 @@
 # Limitations — read before deploying
 
-Scope, inherited from the general [MW Framework](https://github.com/RahulModak74/MW_Geometric_Intelligence)
-this repo is trimmed from. Each point was observed while building that repo's seven examples;
-the numbered examples referenced below (00, 01, 05, 06) live there, not in this trim — this
-repo's own result, with its own mixed findings, is in [ROBOTICS.md](../ROBOTICS.md).
+These limits carry over from the general [MW Framework](https://github.com/RahulModak74/MW_Geometric_Intelligence)
+this repo is trimmed from. Each one was found while building that repo's seven examples
+(numbered 00, 01, 05, 06 below — those live in the parent repo, not here). This repo's own
+results, with their own mixed findings, are in [ROBOTICS.md](../ROBOTICS.md).
 
-**1. Physics does not always beat a plain VAE.**
-On clean, plentiful data with simple laws, they tie (examples 01 and 06). The prior pays off with dirty or sparse data, for learning constants, and for laws the data rarely exercises.
+**1. Physics rules don't always beat a plain model.**
+With clean, plentiful data and simple physics, a plain model does just as well (examples 01
+and 06). Adding physics rules pays off most with messy or sparse data, when you need to learn
+an unknown constant, or for rules the data rarely tests.
 
-**2. Tolerances can hurt.**
-A law that is tighter than the decoder's reconstruction noise forces the model to trade fit for law-compliance. Normal data then scores worse and detection drops. Start loose. Tighten while watching held-out AUC.
+**2. Rules that are too strict can backfire.**
+If a physics rule is tighter than the model's own noise, it forces the model to choose between
+fitting the data and obeying the rule. Either way, detection gets worse. Start with loose
+rules and tighten them gradually while watching how well it catches faults.
 
-**3. Posterior widths are optimistic.**
-The battery example recovers Ea within a few percent, but its reported sd is far smaller than the true error. Mean-field variational inference and the decoder's approximation both shrink uncertainty. Treat posterior sd as a lower bound. Validate constants against a lab test.
+**3. The model's uncertainty estimates are too confident.**
+In the battery example, the model gets a physical constant right to within a few percent, but
+says it's more certain than it actually is. Treat its uncertainty numbers as a floor, not the
+real answer — check important constants against a real lab test.
 
-**4. Latent dimension matters.**
-Too few, and the manifold cannot fit (a closed loop needs 2 latent dims, example 00). Too many, and the decoder invents states in regions with no data; geodesics will cut through them (example 05). Use `path_support()` and aim near the system's true degrees of freedom.
+**4. How much "room" the model has matters.**
+Too little room, and it can't learn the shape it needs to (example 00). Too much, and it
+starts inventing states in places with no real data behind them (example 05). Use
+`path_support()` to check, and aim for about as much room as the system actually needs.
 
-**5. MW sees what is off the manifold — not what is subtle along it.**
-An attacker or fault that moves the system to another *normal* state is invisible to a snapshot score. Use the Lorentzian cone for rates and direction over time; use domain constraints for known bad regions.
+**5. MW catches a state that's clearly off, not a subtle shift between two normal-looking states.**
+A fault that moves the system from one "normal-looking" state to another won't show up in a
+single snapshot. For that, you need to look at how the state changes over time (the
+Lorentzian cone), or add a specific rule for the exact bad region you're worried about.
 
-**6. Sensitivity has a floor.**
-The validator in example 06 does not notice small solver errors (grid step ≤ 0.2). Scores average over all features, so one slightly wrong feature can hide in noise. For single critical laws, monitor the law residual directly as well.
+**6. There's a floor to how small a fault it can notice.**
+In one example, it misses a small enough simulation error. Scores average across every
+feature, so a problem in just one feature can get lost in the noise. If one specific rule
+really matters, watch that rule's own error directly too, not just the overall score.
 
-**7. The training set defines "normal".**
-Operating regimes absent from training (a new season, a new firmware) will raise false alarms. Retrain or add data. Calibration assumes the held-out normal data looks like future normal data.
+**7. The training data defines what counts as "normal."**
+A situation the model never saw during training (a new season, new equipment) will look like
+a false alarm. You'll need to retrain or add more data. Calibration assumes future normal data
+looks like the normal data it was trained on.
 
-**8. O(n) is about inference.**
-Scoring one state costs one encoder and one decoder pass. Training still needs data, epochs and tuning. The comparison with PDE solvers is about *checking or emulating states*, not about solving the PDE to the same accuracy.
+**8. The speed gain is about checking, not solving.**
+Checking one state costs one quick pass through the model. Training still takes real data,
+time, and tuning. The comparison to a physics solver is about *checking or predicting a
+state*, not about solving the underlying equations to the same precision a solver would.
 
-**9. Synthetic data.**
-All examples use physics-generated data with known truth. Results on real systems will be lower and noisier. Treat the numbers here as a demonstration of mechanism, not as benchmarks.
+**9. All the data here is simulated, not real-world.**
+Every example uses data generated from known physics, where the right answer is known for
+sure. Real-world results will likely be noisier and a bit worse. Treat these numbers as
+proof the method works, not as a guaranteed real-world benchmark.
 
-**10. Not a safety system.**
-This is research software. Do not use it as the sole protection for equipment or people.
+**10. This is not a safety system.**
+It's research software. Don't rely on it as the only thing protecting equipment or people.
