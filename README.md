@@ -91,6 +91,10 @@ this trim and is not a robotics-specific regression. Left as-is rather than quie
 
 - **[ROBOTICS.md](ROBOTICS.md)** — the full, honest result and what it would take to close the gap.
 - **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)** — what the MW approach is not, and where it fails in general.
+- Modak & Walawalkar, ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
+  (Zenodo, 2026) — the forward-only-time / causal-cone architecture that would close this
+  repo's validator-vs-forecaster gap (battery-only in the paper; see ROBOTICS.md's "Related
+  theory" section for what it would and would not give a robotics version).
 
 ## Scope
 

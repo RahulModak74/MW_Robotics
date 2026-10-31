@@ -45,6 +45,33 @@ honest next step is to fix the laws (or the feature set) so the fidelity-sweep t
 the right direction, re-test, and only then write up a result — the same standard already
 applied to the battery evidence in PYBAMM_ALTERNATIVE/EVIDENCE.md.
 
+## Related theory: what would close gap 3 above
+
+Modak & Walawalkar, "World Models with an Irreversible Time Axis" (Zenodo, DOI
+[10.5281/zenodo.22954118](https://doi.org/10.5281/zenodo.22954118), 2026) proposes the
+architecture this repo's gap 3 is missing: instead of a learned transition function, learn a
+manifold of admissible states with a forward-only time axis, and *forecast* by walking the
+manifold between the current state and a physics-projected target, rather than checking a
+single given state.
+
+Read plainly, not oversold:
+- **This has not been applied to robotics.** The paper's only evidence is battery (an EV
+  fleet analytics deployment, plus an external validation against a published SEI-cracking
+  study where the result was reproduced on the study author's own data and confirmed by
+  them). Building the robotics version is future work, not a result either repo has.
+- **Even in the paper, it is not a from-scratch simulator.** Its own Limitations section
+  says forecast *endpoints* still come from an external physics model; the manifold only
+  shapes the path between them. That matters here: closing gap 3 for the beam PDE would
+  still need something outside the manifold to say where a trajectory ends up.
+- **The Lorentzian cone (the part closest to this repo's anomaly work) is tested on
+  synthetic data and injected faults only**, not recorded real fast-fade events, and about
+  5% of normal transitions fall outside the cone by construction (95th-percentile
+  calibration) — the same kind of honest ceiling this repo's own fault-detection AUCs have.
+
+Adapting this pattern to `FlexibleRobotVAE` — a forward-only time axis, a dedicated clock
+encoder separate from the state encoder, and a target state fed in from the beam's known
+linear decay — is the concrete next step toward a real forecaster, not just a validator.
+
 ## Reproduce
 ```bash
 cd MW_Robotics && pip install -r requirements.txt
