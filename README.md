@@ -6,7 +6,11 @@ This repository is a robotics-only trim of the general [MW Framework](https://gi
 code companion (DOI [10.5281/zenodo.19304813](https://doi.org/10.5281/zenodo.19304813)):
 physics-constrained Bayesian manifold learning, with everything specific to other domains
 (battery, RF, fluid flow, electrical) removed and one new domain added — a genuine robotics
-PDE. **Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed, honest result, not a clean win.**
+PDE. 
+
+Another zenodo submission explains MW as world model...https://zenodo.org/records/22954118
+
+**Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed, honest result, not a clean win.**
 
 **Two different claims, kept separate:**
 - **The core MW mechanism works** — that part is pushed on the strength of real evidence
