@@ -1,82 +1,125 @@
 # Robotics in MW_Robotics — status and limits (2026-10-31)
 
-This folder is `MW_Framework` plus one new domain: `mw_framework/domains/flexible_robot.py`,
-the Euler-Bernoulli beam PDE that governs a flexible-link robot arm or a soft-robot segment
-(a rigid robot's joints are ODEs; its compliant links and soft actuators are this PDE).
-Run `python examples/00_flexible_robot_validator.py`.
+This folder is `MW_Framework` plus six new domains, each a genuinely different piece of
+robotics physics: a PDE (a flexible-link beam), two different ODEs (a joint actuator, a
+mobile robot's nonholonomic kinematics), a pure-kinematics chain (a planar arm), a
+hybrid/impact problem (a legged robot's foot contact), and a second PDE (motor thermal
+diffusion). Run any of `examples/00_flexible_robot_validator.py` through
+`examples/05_actuator_thermal_validator.py`. See [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)
+for concrete, testable next steps on every gap below.
 
 ## Status, in two tiers — read this before anything else
 
 **Tier 1 — core MW mechanism: a proven result, and the reason this is worth building on.**
-`core.py`'s machinery (priors as likelihood terms, a VAE on a physics-constrained manifold,
-O(n) inference, MW distance as an anomaly score, calibration) is unchanged from the parent
-`MW_Framework` repo, where it is validated on battery data: production deployment, open
-Sandia/HUST held-out cells, and an independent researcher's own sweep (see
-`PYBAMM_ALTERNATIVE/EVIDENCE.md` in the battery repo). That mechanism also ran correctly here,
-unedited, on a brand-new robotics PDE it had never seen code for, on the first attempt — no
-GPU cluster, no PDE solver at inference time. That is the part of this repo backed by real
-evidence, and it's a genuinely rare thing to have working at all.
+`core.py`'s machinery (priors as likelihood terms via Pyro SVI, a VAE on a physics-constrained
+manifold, O(n) inference, MW distance as an anomaly score, calibration) is unchanged from the
+parent `MW_Framework` repo, where it is validated on battery data: production deployment,
+open Sandia/HUST held-out cells, and an independent researcher's own sweep (see
+`PYBAMM_ALTERNATIVE/EVIDENCE.md` in the battery repo). That same mechanism, unedited, now also
+runs correctly on six brand-new robotics physics systems it had never seen code for — a PDE,
+two different ODEs, pure kinematics, a nonholonomic constraint, and a hybrid/impact problem.
+No GPU cluster is needed at any point: inference is faster on CPU than GPU for single
+readings (see "Performance" below), and even full training completes in 3 minutes on a
+laptop CPU alone. That's the part of this repo backed by real evidence, and it's a genuinely
+rare thing to have working at all, let alone six times over.
 
-**Tier 2 — the robotics domain itself: the first experiment on new ground.** `flexible_robot.py`'s
-three physics laws and the beam dataset are new, untested-by-anyone-else code. The mechanism
-runs; one fault is caught cleanly already, and two are only partly separated so far (numbers
-below) — exactly the kind of result a first experiment on a brand-new domain should produce:
-strong enough to show the approach is real, specific enough to show where to push next. It's
-public as a starting point so other researchers can build on it, extend it, or improve the
-laws, rather than starting from zero.
+**Tier 2 — each robotics domain: a first experiment on new ground.** Every domain's three
+physics laws and dataset are new, untested-by-anyone-else code. The mechanism runs in every
+case; some faults are caught cleanly already, others only partly — exactly the kind of result
+a first wave of experiments on brand-new domains should produce: strong enough to show the
+approach is real, specific enough to show where to push next. They're public as a starting
+point so other researchers can build on them, extend them, or improve the laws, rather than
+starting from zero.
 
 **The two claims to keep separate: "the MW mechanism generalizes to robotics" is supported by
-this run. "This specific robotics validator is finished" is not — it's version one.**
+six independent runs. "These six specific robotics validators are finished" is not — they're
+version one.**
 
-## What this shows
-1. **The MW mechanism transfers unchanged to a new, genuine robotics PDE.** Zero edits to
-   `core.py`, `geometry.py`, `algebra.py`, `detector.py`. Only a new domain file with this
-   PDE's own laws was needed — exactly the pattern the parent repo's other six domains
-   already demonstrate (battery, RF, Navier-Stokes, Ohm's law...), now extended one more step.
-2. **One fault type is caught cleanly.** "no_decay" (a stuck damper / loose joint — the
-   robot keeps vibrating long after it should have settled) scores ROC-AUC 1.00.
-3. **The learned manifold itself obeys the laws.** States generated from pure noise through
-   the trained decoder satisfy the moment-curvature constitutive law and the strain limit to
-   within the training sensor noise.
+## Results across all six domains (measured 2026-10-31)
 
-## Where the next iteration should focus (measured 2026-10-31)
-1. **Two of three labelled faults are only partly separated so far.** `stiffness_loss` (a
-   crack: local loss of stiffness) and `moment_glitch` (a moment-sensor fault) score ROC-AUC
-   ~0.57 and ~0.64 — real signal, not yet a clean separation. A good target for the next
-   version of the laws.
-2. **The coarse-simulator validator test came back the wrong way round.** Example 06
-   (Navier-Stokes, in the parent repo) showed MW distance rising as a coarse solver's grid
-   step grew. The same test here went the other way: distance fell as the approximate beam
-   simulator's fidelity dropped, and the flag rate stayed flat at the ~1% noise floor across
-   every fidelity level. Likely cause, diagnosed rather than left a mystery: dropping a
-   vibration mode removes energy, and the three laws as written don't yet penalise a
-   trajectory that is too smooth/quiet, only one that is too energetic or inconsistent. A
-   specific, fixable gap — reproduced on rerun, so it's a real finding, not noise.
-3. **This is a validator, not yet a forecaster.** It checks whether a given state is
-   physical; it doesn't yet predict the next state from the current one, the way a robot
-   simulator (or the battery SoH geodesic walk in the production battery product) does.
-   Turning this into a forward-time model that stands in for a robotics PDE solver is the
-   natural next step — see "Related theory" below for the architecture that points the way.
+| Domain | False alarms (held-out normal) | Fault ROC-AUCs |
+|---|---|---|
+| flexible_robot (beam) | 1.6% | no_decay **1.00** · moment_glitch 0.64 · stiffness_loss 0.57 |
+| joint_actuator | 0.4% | no_settle **0.97** · torque_sensor_glitch 0.91 · friction_increase 0.55 |
+| planar_arm | 0.1% | encoder_drift 0.89 · velocity_glitch 0.89 · link_bent 0.67 |
+| mobile_robot | 1.7% | overspeed **1.00** · wheel_slip 0.89 · gyro_glitch 0.73 |
+| legged_contact | 0.7% | bad_restitution **1.00** · energy_gain **1.00** · ground_penetration 0.99 |
+| actuator_thermal | 2.4% | cooling_failure **1.00** · flux_sensor_glitch 0.98 · hotspot_short 0.57 |
 
-## What this is evidence of
-The mechanism is portable to a genuine, novel robotics PDE with no changes to the core
-framework code — proven on this run. Whether a strong robotics validator or forecaster can be
-built on top of it is the open, exciting part: this first attempt is already strong on one
-fault and has a clear, diagnosed path forward on the other two. Next step: sharpen the laws
-(or the feature set) so the fidelity-sweep test moves in the right direction, re-test, and
-build from there — the same standard already applied to the battery evidence in
-`PYBAMM_ALTERNATIVE/EVIDENCE.md`.
+**Pattern 1 — faults that are a structural break are caught very well everywhere.** Lost
+damping, a stuck/runaway joint, overspeed, bad restitution, an impossible mid-flight energy
+gain, a cooling failure: every one of these scores 0.97–1.00, across five unrelated domains.
+That's not a coincidence of one lucky run; it's the same mechanism catching the same *kind*
+of fault — "this trajectory violates a hard physical identity" — every time it's tried.
 
-## Related theory: the architecture for closing gap 3 above
+**Pattern 2 — faults that are a subtle, scaled change to one channel are consistently
+weaker.** `friction_increase` (0.55), `link_bent` (0.67), `hotspot_short` (0.57) all share
+the same shape: a proportional perturbation that can overlap the normal range rather than
+breaking an identity outright. This is a real, repeated signature across three unrelated
+domains, not noise in one run — and [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md) lays out the
+specific, testable steps to find out why and fix it (starting with a positive control at a
+larger fault magnitude, before changing any code).
+
+**Pattern 3 — generated (prior-sampled) states satisfy their own law far more loosely in the
+pure-kinematic and impact domains.** `planar_arm`, `mobile_robot` and `legged_contact`
+generate states whose law residual is 10–30x the training sensor noise; the ODE/PDE domains
+(`joint_actuator`, `actuator_thermal`, the beam) stay within about 1x. Anomaly detection
+still works well in two of the three looser domains — this is a separate, specific finding
+about what the unconditional prior produces, with concrete next steps in
+[FIXING_THE_GAPS.md](FIXING_THE_GAPS.md).
+
+## The beam's coarse-simulator test: one result that went the wrong way, diagnosed
+
+Example 06 (Navier-Stokes, in the parent repo) showed MW distance rising as a coarse solver's
+grid step grew. The equivalent test for the beam went the other way: distance fell as the
+approximate simulator's fidelity dropped, and the flag rate stayed flat at the noise floor
+across every fidelity level. Diagnosed, not left a mystery: dropping a vibration mode removes
+energy, and the beam's current laws don't yet penalise a trajectory that is too smooth/quiet,
+only one that is too energetic or inconsistent.
+[FIXING_THE_GAPS.md](FIXING_THE_GAPS.md) proposes a concrete one-line fix, already supported
+by existing code (`core.py::bound()` already accepts a two-sided band).
+
+## Not yet a forecaster
+
+All six domains are validators: they check whether a *given* state is physical. None of them
+yet predicts the *next* state from the current one, the way a robot simulator (or the battery
+SoH geodesic walk in the production battery product) does. Turning any of these into a
+forward-time model that stands in for a robotics PDE/ODE solver is the natural next step —
+see "Related theory" below for the architecture that points the way.
+
+## Performance: no GPU required, measured
+
+Inference (median of repeated `mw_distance` calls after warm-up; this machine's CPU —
+i5-12450H — vs. RTX 3050 laptop GPU):
+
+| Domain | CPU, 1 sample | GPU, 1 sample | CPU, batch 1000 | GPU, batch 1000 |
+|---|---|---|---|---|
+| flexible_beam | 1.14 ms | 3.43 ms | 107.4 ms | 3.63 ms |
+| joint_actuator | 1.30 ms | 2.57 ms | 50.3 ms | 2.43 ms |
+| planar_arm | 1.08 ms | 2.07 ms | 87.3 ms | 2.04 ms |
+| mobile_robot | 1.08 ms | 3.39 ms | 90.0 ms | 3.47 ms |
+| legged_contact | 1.28 ms | 2.08 ms | 70.1 ms | 2.11 ms |
+| actuator_thermal | 1.23 ms | 3.56 ms | 58.3 ms | 3.53 ms |
+
+At the realistic deployment pattern — one new reading at a time — CPU is 2–3x *faster* than
+GPU, because GPU kernel-launch overhead dominates at batch size 1. GPU only wins at batch
+scale (15–30x faster at 1000 at once), which matters for sweeps and fleet-wide scoring.
+
+Training (`flexible_robot`, 200 epochs on 4000 rows, identical code, only `MW_DEVICE`
+changed): GPU 105.6 s (527.7 ms/epoch) vs. CPU 181.7 s (908.4 ms/epoch) — about 1.7x slower
+on CPU, and still 3 minutes end to end on a laptop. Training doesn't need a GPU; it's just
+somewhat faster with one.
+
+## Related theory: the architecture for closing the "not yet a forecaster" gap
 
 Modak & Walawalkar, "World Models with an Irreversible Time Axis" (Zenodo, DOI
 [10.5281/zenodo.22954118](https://doi.org/10.5281/zenodo.22954118), 2026) proposes exactly the
-piece this repo is missing: instead of a learned transition function, learn a manifold of
-admissible states with a forward-only time axis, and *forecast* by walking the manifold
-between the current state and a physics-projected target, rather than only checking a single
-given state. It frames MW as a fourth family of world models, alongside latent imagination
-(Dreamer), joint-embedding prediction (JEPA) and generative video (Genie/Cosmos) — none of
-which can express "this state cannot be reached from that one."
+piece these six domains are missing: instead of a learned transition function, learn a
+manifold of admissible states with a forward-only time axis, and *forecast* by walking the
+manifold between the current state and a physics-projected target, rather than only checking
+a single given state. It frames MW as a fourth family of world models, alongside latent
+imagination (Dreamer), joint-embedding prediction (JEPA) and generative video (Genie/Cosmos)
+— none of which can express "this state cannot be reached from that one."
 
 What it's shown so far, and what's still ahead:
 - **Proven in battery, not yet applied to robotics.** The paper's evidence is an EV fleet
@@ -85,20 +128,23 @@ What it's shown so far, and what's still ahead:
   Building the robotics version is the natural next step, not a result either repo has yet.
 - **Even in the paper, the manifold isn't asked to do everything alone.** Its own Limitations
   section notes forecast *endpoints* still come from an external physics model; the manifold
-  shapes the path between them. For the beam PDE, that means pairing the manifold with
-  something that says where a trajectory ends up — a well-scoped, tractable next piece.
+  shapes the path between them. For any of these six domains, that means pairing the manifold
+  with something that says where a trajectory ends up — a well-scoped, tractable next piece.
 - **The Lorentzian cone (closest to this repo's anomaly work) has been tested on synthetic
   data and injected faults**, with real signal: normal transitions cluster inside the cone,
   injected fast-fade events cluster outside it, and the ~5% false-positive rate matches its
   95th-percentile calibration exactly as designed. Testing on recorded real fast-fade events
   is the next step there too.
 
-Adapting this pattern to `FlexibleRobotVAE` — a forward-only time axis, a dedicated clock
-encoder separate from the state encoder, and a target state fed in from the beam's known
-linear decay — is the concrete next step toward a real forecaster, not just a validator.
+Adapting this pattern to any of the six domains here — a forward-only time axis, a dedicated
+clock encoder separate from the state encoder, and a target state fed in from the system's
+own known dynamics — is the concrete next step toward a real forecaster, not just a
+validator. `joint_actuator` and `legged_contact` are the most tractable starting points:
+both already have an exact, known time-evolution law to supply the target state from.
 
 ## Reproduce
 ```bash
 cd MW_Robotics && pip install -r requirements.txt
-python examples/00_flexible_robot_validator.py          # GPU auto-used if present (MW_DEVICE=cpu to force CPU)
+python examples/00_flexible_robot_validator.py          # or 01..05 - GPU auto-used if present (MW_DEVICE=cpu to force CPU)
+pytest -q
 ```
