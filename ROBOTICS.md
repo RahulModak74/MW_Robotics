@@ -5,6 +5,27 @@ the Euler-Bernoulli beam PDE that governs a flexible-link robot arm or a soft-ro
 (a rigid robot's joints are ODEs; its compliant links and soft actuators are this PDE).
 Run `python examples/00_flexible_robot_validator.py`.
 
+## Status, in two tiers — read this before anything else
+
+**Tier 1 — core MW mechanism: works, pushed on that basis.** `core.py`'s machinery (priors
+as likelihood terms, a VAE on a physics-constrained manifold, O(n) inference, MW distance as
+an anomaly score, calibration) is unchanged from the parent `MW_Framework` repo, where it is
+validated on battery data: production deployment, open Sandia/HUST held-out cells, and an
+independent researcher's sweep (see `PYBAMM_ALTERNATIVE/EVIDENCE.md` in the battery repo).
+That mechanism also ran correctly here, unedited, on a brand-new robotics PDE it had never
+seen code for. That transfer is a real, demonstrated result — not an aspiration.
+
+**Tier 2 — the robotics domain itself: a prototype, not a result.** `flexible_robot.py`'s
+three physics laws and the beam dataset are new, untested-by-anyone-else code. The honest
+status is "mechanism confirmed to run; whether these specific laws make a USEFUL robotics
+validator is open and partly negative" (one fault caught, two weak, one headline test
+backwards — see below). This is pushed as a prototype and an invitation: the repo, the bug
+found while building it, and the failure are all public so a researcher can pick it up,
+disagree with the laws, or fix them, rather than taking "it works" on faith.
+
+Keep these two claims separate when talking about this repo: **"the MW mechanism generalizes"
+is supported; "this robotics validator works" is not yet.**
+
 ## What this shows
 1. **The MW mechanism (priors as likelihood terms, VAE on the constrained manifold, O(n)
    inference, MW distance as an anomaly score) transfers unchanged to a new, genuine

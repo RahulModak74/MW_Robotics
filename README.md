@@ -8,6 +8,14 @@ physics-constrained Bayesian manifold learning, with everything specific to othe
 (battery, RF, fluid flow, electrical) removed and one new domain added — a genuine robotics
 PDE. **Read [ROBOTICS.md](ROBOTICS.md) first — it reports a mixed, honest result, not a clean win.**
 
+**Two different claims, kept separate:**
+- **The core MW mechanism works** — that part is pushed on the strength of real evidence
+  (battery: production use, open-dataset validation, an independent researcher's sweep).
+  It also ran correctly here, unedited, on a brand-new robotics PDE.
+- **The robotics domain in this repo is a prototype**, not a validated result — new laws,
+  tested once, partly working and partly not. It's public so researchers can extend or
+  correct it, not because it's finished. See `ROBOTICS.md`'s "Status, in two tiers."
+
 ## The idea in four lines
 
 1. Physics confines a real system to a thin surface — a **manifold** — inside its sensor space.
