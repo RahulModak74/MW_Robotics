@@ -38,16 +38,40 @@ it opens up for robotics.
   others. They're public exactly so other researchers can build on them faster than starting
   from scratch. See `ROBOTICS.md`'s "Status, in two tiers" and `FIXING_THE_GAPS.md`.
 
-## The idea in four lines
+## Where the speedup actually comes from
 
-1. Physics confines a real system to a thin surface — a **manifold** — inside its sensor space.
-2. A Bayesian VAE **learns** that surface from normal data.
-3. Known laws enter as **priors and likelihood terms**, so the learned surface must obey them.
-4. Anything new is scored by its **MW distance** from the surface. One forward pass. O(n) in the number of features.
+**The reduction in compute is not a trick of the neural network — it is a reduction in the size
+of the space being searched, and it comes directly from the physics.**
+
+A classical Monte Carlo approach samples the full hypercube of every combination a system's
+state variables could take — a space that grows exponentially with the number of dimensions,
+routinely 10⁶–10⁹+ states for a real system (the theory behind this repo, in the "MW Framework"
+Zenodo preprint cited below, reports roughly this order of reduction on classical PDE problems;
+within this repo, the concrete evidence is the measured constant-vs-linear scaling in
+[FORECASTER.md](FORECASTER.md)). **Almost none of that hypercube is physically reachable.** A
+robot's joint angle, a battery's voltage, a beam's curvature — each is constrained by an
+equation, and the true system can only ever occupy the thin region where every one of those
+equations holds at once.
+
+**Bayesian priors are how that constraint gets built into the model — and the priors here are
+not generic regularisers, they are the system's own governing equations**, written as
+`constraint()` and `bound()` calls in each `domains/*.py` file (Newton's second law for a
+joint, Fourier's law for heat flow, the nonholonomic constraint for a wheeled robot, energy
+conservation for a bounce). Training doesn't just fit a curve to data: it **carves the
+hypercube down** to the low-dimensional, curved region — a **Riemannian manifold**
+(`geometry.py`'s pullback metric gives it exactly that structure) — where the physics is
+actually satisfied.
+
+Once that manifold is learned, answering a question about a new state is **one pass through a
+small decoder, not a search over the original hypercube.** That is the entire mechanism behind
+every number in this repository: the no-GPU-needed inference times, and the constant-per-hop
+cost in the forecaster experiment that eventually beats a solver stepping forward in small
+increments. The manifold *is* the compression; the one forward pass is just reading it.
 
 ```
-classical:  physics -> PDEs -> numerical solve (grid, time steps)     -> answer
-MW:         physics -> Bayesian priors -> learned manifold -> one pass -> answer
+classical:  physics -> PDEs -> numerical solve over the full state hypercube  -> answer
+MW:         physics -> Bayesian priors (= the equations) -> carve the hypercube down to a
+            Riemannian manifold -> one forward pass over that manifold          -> answer
 ```
 
 ## The six robotics domains in this repo
