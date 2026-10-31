@@ -193,6 +193,9 @@ not something this robotics version broke. Left as-is rather than quietly adjust
 - **[ROBOTICS.md](ROBOTICS.md)** — full results for all six domains, and what to try next.
 - **[FORECASTER.md](FORECASTER.md)** — can MW predict the future, not just check the present? Tested against a real simulator (MuJoCo).
 - **[FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)** — specific fixes to try for every weak spot found.
+- **[path_to_full_Robotics.md](path_to_full_Robotics.md)** — the staged plan from here to
+  ProtoMotions-scale demos: a coupled many-joint body, real-time control, learning from real
+  motion data, a real robot. Every stage rated for how likely it is to work.
 - **[docs/LIMITATIONS.md](docs/LIMITATIONS.md)** — where this whole approach falls short, in general.
 - Modak & Walawalkar, ["World Models with an Irreversible Time Axis"](https://doi.org/10.5281/zenodo.22954118)
   — the fuller idea behind using MW to predict the future. FORECASTER.md tests a simpler,
