@@ -1,0 +1,4 @@
+Collecting a FIXED held-out test set (disjoint seeds)...
+n_episodes= 40  normal_rows= 1531  flag_rate_on_held_out=20.8%
+n_episodes= 80  normal_rows= 3082  flag_rate_on_held_out=10.8%
+n_episodes=120  normal_rows= 4658  flag_rate_on_held_out=6.2%

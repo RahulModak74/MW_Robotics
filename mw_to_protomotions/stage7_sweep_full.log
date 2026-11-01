@@ -1,0 +1,16 @@
+Training the Stage 1 validator...
+calibrated threshold: 57.549
+
+Lead time vs push SEVERITY (fixed timing, step 30):
+  push=1.0  fell=12/12  flagged_early=12/12  mean_lead= 36.1 steps
+  push=2.0  fell=12/12  flagged_early=12/12  mean_lead= 22.1 steps
+  push=3.0  fell=12/12  flagged_early=12/12  mean_lead= 21.3 steps
+  push=4.0  fell=12/12  flagged_early=12/12  mean_lead= 26.4 steps
+  push=5.0  fell=12/12  flagged_early=12/12  mean_lead= 26.2 steps
+  push=6.0  fell=12/12  flagged_early=12/12  mean_lead= 24.2 steps
+
+Lead time vs push TIMING (fixed severity, push=3.0):
+  push_at= 10  fell=12/12  flagged_early=12/12  mean_lead= 20.7 steps
+  push_at= 30  fell=12/12  flagged_early=12/12  mean_lead= 23.8 steps
+  push_at= 60  fell=12/12  flagged_early=12/12  mean_lead= 25.2 steps
+  push_at=100  fell=12/12  flagged_early=12/12  mean_lead= 34.4 steps

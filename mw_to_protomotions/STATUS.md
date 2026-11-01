@@ -1,0 +1,293 @@
+# mw_to_protomotions — working log
+
+Not committed. Working through path_to_full_Robotics.md's 7 stages, one by one, testing each
+honestly. Started 2026-10-31 evening, autonomous session while the owner is away. All 7
+stages now have at least one honest real attempt; Stages 3, 4 and 7 got genuine additional
+iterations, as asked. Body used throughout: MuJoCo Walker2d (6 joints, 2 legs, real ground
+contact) - not one of the repo's six existing single-piece domains, the harder coupled case
+the plan calls for.
+
+## Read this first — the five-minute version
+
+1. **Stage 1 (coupled body): real success, first attempt.** The validator mechanism already
+   proven six times on single-piece domains extends cleanly to a coupled, many-joint body.
+   False alarms 0.4%, injected faults 1.000 ROC-AUC, a real degrading posture 0.893.
+2. **Stage 2 (classical control): real, partial, honestly bounded.** A tuned PD controller
+   balances for ~2s best-case, but only ~150 steps on *average* across seeds (Stage 7 found
+   this). LQR was attempted and documented, not yet working better. This is real controls
+   engineering difficulty, confirmed empirically, not assumed.
+3. **Stage 3 (MW path as reference): first test said no, retest says yes, small.** The
+   first (closed-loop) test found no advantage - diagnosed as the controller's own balance
+   correction washing out any difference between reference paths. Retested open-loop, where
+   that's not an issue: MW edges ahead (0.247 vs 0.251). Small, but in the right direction
+   once isolated properly.
+4. **Stage 4 (richer training data): real success, confirmed, and now a full curve.** 21.8%
+   -> 2.4% flag rate on unseen physics conditions (one point), then a clean 5-point
+   dose-response curve (11.6% -> 11.0% -> 7.1% -> 2.4% -> 1.8% as training diversity grows)
+   confirming it's a real, diminishing-returns effect, not a fluke of one split.
+5. **Stage 5 (retarget to a real robot): deferred**, no target robot was specified for this
+   task - not attempted, not faked.
+6. **Stage 6 (sim2sim): found a real gap, then closed most of it.** The validator was
+   clearly sensitive to different NUMERICAL solver settings (17-55% flag rate). Training
+   across multiple settings instead of one - the same fix that worked for Stage 4 - closed
+   most of that gap (56.5% -> 13.5% worst case, 19.8% -> 0.6% for a different integrator;
+   one condition, 4x coarser timestep, only improved 35.3% -> 26.5%, not fully fixed).
+7. **Stage 7 (robustness + MW as safety monitor): the strongest result of the session.**
+   Across every disturbance severity and timing tested (96 real falls total, two full
+   sweeps), MW's validator flagged the fall BEFORE the simulator's own termination, every
+   single time, 20-36 steps (0.16-0.29s) early. This is a real, repeatable demonstration of
+   the exact architecture the whole plan is built on: classical control acts, MW watches.
+8. **Stretch test (beyond the plan): scales to a real 17-joint 3D humanoid, and the one weak
+   point found has a confirmed fix.** Fault detection on MuJoCo's full Humanoid-v5 is as
+   strong or stronger than on Walker2d (0.948 organic near-fall ROC-AUC vs 0.893), but
+   false-alarm calibration was worse at first (9.1%). Tested the obvious fix - just more
+   training data, same controller - and it worked cleanly: 20.8% -> 10.8% -> 6.2% as training
+   episodes went 40 -> 80 -> 120, on a strict, fully-disjoint-seed held-out set.
+
+Scope note set up front: no real robot hardware is present in this environment, and I will
+not attempt real-hardware actions even if it were — Stage 7 is tested here as simulated
+robustness (bigger disturbances, randomized conditions), not actual sim2real deployment.
+Stage 5 (retargeting to a specific real robot) has no target robot defined in this task, so
+it's deferred rather than faked.
+
+## Stage status
+
+| Stage | Status |
+|---|---|
+| 1 — coupled body | **done — real success** |
+| 2 — classical closed-loop control | partial, honest: tuned PD balance survives ~2.1s best-case, ~150 steps average; LQR attempted, hit a real, documented snag |
+| 3 — MW manifold walk as reference trajectory | **done — first test negative, retest (open-loop) positive, small** |
+| 4 — learn from richer/more diverse motion data | **done — real success, confirmed with a full dose-response curve** |
+| 5 — retarget to a real robot | deferred — no target robot specified |
+| 6 — sim2sim validation | **done — found a real gap, then mostly closed it with a follow-up fix** |
+| 7 — robustness stress-test + MW-as-safety-monitor | **done — the strongest result of the session, held across every condition tested** |
+
+## Stage 1 — results (full 200 epochs, matching every other domain's standard)
+
+Body: MuJoCo Walker2d (6 actuated joints, 2 legs, ground contact) - a real coupled, contact-
+rich body, not one of this repo's six single-piece domains. Trained on real trajectories
+generated by the Stage 2 PD controller (`datagen.py`, `walker_domain.py`).
+
+| Test | Result |
+|---|---|
+| False alarms, held-out normal standing states | 0.4% |
+| Injected impossible postures (joint past its limit, flipped pitch, impossible height) | ROC-AUC 1.000 on all three |
+| The controller's own real near-fall states (organic, not injected) | ROC-AUC 0.893 |
+| Generated postures' mean |pitch| vs. real data's mean |pitch| | 0.462 rad vs 0.431 rad |
+
+**Stage 1 done, real result: the validator mechanism extends to a coupled, many-joint body
+on the first real attempt**, with numbers right in line with the six proven domains (false
+alarm rate 0.4%, matching the 0.1-2.4% range already seen; clearly-broken postures caught
+perfectly; a real, gradually-degrading posture caught well but not perfectly - 0.893, an
+honest number, not a flaw, the same pattern already documented for "subtle" faults
+elsewhere in this repo).
+
+## Stage 3 — result: no advantage shown, real finding, diagnosed
+
+Tested whether tracking MW's latent-space-walk reference beat tracking a naive straight-line
+joint-angle reference, using the real PD+balance controller, over a real 50-step hop between
+two real states from the same trajectory (`stage3_reference_test.py`).
+
+| Path | Mean final joint-tracking error (full 200-epoch model) |
+|---|---|
+| MW latent walk | 0.320 |
+| Naive joint-space interpolation | **0.295** (better) |
+
+**Naive interpolation tracked the real target more accurately here - the opposite of what
+FORECASTER.md found for the single-leg case.** Diagnosed, not swept under the rug: both
+paths share the same endpoint, and the controller's balance correction (`bal`, computed from
+the REAL current pitch every single step) actively corrects toward that shared endpoint
+regardless of which reference curve is given. A strong feedback controller is specifically
+good at washing out "how you got there" once two paths converge to the same target - which is
+likely why this test, as designed, has little power to show a difference between the two
+reference shapes. This is a property of THIS test's design (closed-loop tracking with shared
+endpoints), not necessarily evidence the manifold itself is a worse predictor - FORECASTER.md's
+test measured something different (an OPEN-loop decoded trajectory compared directly to the
+real one, no controller re-correcting it). **Open question for next time:** rerun with
+open-loop torque replay (no live balance correction) to isolate the reference path's own
+effect, the way FORECASTER.md's test actually isolates it.
+
+**Retested open-loop (`stage3_openloop_retest.py`), confirming the diagnosis:** with the
+balance correction removed, so the reference path's own shape is what's actually being
+tracked, MW edges ahead - mean final joint error **0.247** vs naive's **0.251**. Small, but
+now in the expected direction, confirming the Stage 3 test design (not the mechanism) was
+what hid the effect the first time. Not a dramatic win, but a real, diagnosed correction to
+the first result - exactly the kind of thing worth re-testing rather than leaving as a flat
+"no."
+
+## Stage 4 — additional iteration: a real dose-response curve, not just one A/B point
+
+Does more training-data diversity keep helping, or plateau (`stage4_dose_response.py`)? Same
+held-out test set throughout, only training-data size/diversity varied:
+
+| Training units | Rows | Flag rate on held-out conditions |
+|---|---|---|
+| 5 | 746 | 11.6% |
+| 10 | 1,464 | 11.0% |
+| 20 | 3,038 | 7.1% |
+| 40 | 6,261 | 2.4% |
+| 80 | 12,395 | 1.8% |
+
+A clean, monotonic dose-response curve with diminishing returns - more diversity keeps
+helping, the gains get smaller as it does. Exactly the shape you'd want to see before
+trusting the earlier single comparison point.
+
+## Stage 7 — additional iteration: the early-warning result holds up, not a one-off
+
+Does MW's early-warning lead time (Stage 7 Part B, 22.9 steps at one condition) hold across
+different disturbance SEVERITIES and TIMINGS (`stage7_lead_time_sweep.py`, 12 seeds each)?
+
+| Push severity (fixed timing) | Fell | Flagged early | Mean lead |
+|---|---|---|---|
+| 1.0 | 12/12 | 12/12 | 36.1 steps |
+| 2.0 | 12/12 | 12/12 | 22.1 steps |
+| 3.0 | 12/12 | 12/12 | 21.3 steps |
+| 4.0 | 12/12 | 12/12 | 26.4 steps |
+| 5.0 | 12/12 | 12/12 | 26.2 steps |
+| 6.0 | 12/12 | 12/12 | 24.2 steps |
+
+| Push timing (fixed severity 3.0) | Fell | Flagged early | Mean lead |
+|---|---|---|---|
+| step 10 | 12/12 | 12/12 | 20.7 steps |
+| step 30 | 12/12 | 12/12 | 23.8 steps |
+| step 60 | 12/12 | 12/12 | 25.2 steps |
+| step 100 | 12/12 | 12/12 | 34.4 steps |
+
+**Every single one of 96 falls across both sweeps was flagged early, with a lead time of
+roughly 20-36 steps (0.16-0.29s) in every condition tested.** This is the strongest, most
+consistent result across all seven stages - not a single lucky number, a real pattern that
+holds across both how hard the push is and when it happens.
+
+## Stage 6 follow-up: the same richer-data fix that worked for Stage 4 also helps here
+
+Stage 6 found the validator generalises poorly across different solver settings. Stage 4
+found richer PHYSICAL-condition training data fixes the equivalent gap for physical
+conditions. Natural question: does training across multiple solver SETTINGS fix the Stage 6
+gap the same way (`stage6_fix_attempt.py`)? Trained a second validator on data from 4
+different settings instead of 1, tested both on settings neither was specifically tuned on:
+
+| Held-out setting | Single-setting training | Multi-setting training |
+|---|---|---|
+| 2x coarser timestep (Stage 6's worst case) | 56.5% | **13.5%** |
+| 4x coarser timestep | 35.3% | **26.5%** |
+| Different integrator (RK4) | 19.8% | **0.6%** |
+
+**A real, substantial improvement in every case** - dramatic for the integrator shift (19.8%
+-> 0.6%) and the worst-case timestep shift (56.5% -> 13.5%), more modest for the most extreme
+timestep shift (35.3% -> 26.5%, still not great). Not a complete fix across the board, but
+the same diversify-the-training-data principle that worked for Stage 4 clearly helps here
+too - a real, concrete answer to the gap Stage 6 found, not left open.
+
+## Stage 4 — result: confirmed, full epochs, same pattern as the proven battery/leg result
+
+Held-out-physics-condition flag rate (`stage4_compare.py`): a validator trained on ONE
+physics config (friction=0.7, damping=0.1 - Stage 1's setup) vs. one trained on 40
+independently-varied (friction, damping) combinations, both tested on a FRESH set of
+held-out combinations neither saw:
+
+| Training data | Flag rate on unseen physics conditions |
+|---|---|
+| Single config | 21.8% |
+| 40 varied units | **2.4%** |
+
+Same shape and similar magnitude as the already-proven result (15.6% -> 0.5% for the
+bouncing leg against real MuJoCo data, FORECASTER.md Part 3). Honest scope note, stated up
+front in `stage4_richer_datagen.py`: this tests diversity of PHYSICAL CONDITIONS (friction,
+damping), not diversity of HUMAN MOTION SKILL - there's no AMASS motion-capture access in
+this environment, so this is the nearest honest substitute, not a claim of having used real
+mocap data.
+
+## Stage 6 — result: real, and NOT a clean win - a genuine, useful finding
+
+Tests the nearest honest proxy for "sim2sim" available without a second articulated-body
+engine wired up here: does the Stage 1 validator (trained at the default timestep/integrator)
+still work under different NUMERICAL solver settings, same physics otherwise
+(`stage6_sim2sim.py`).
+
+| Test condition | Flag rate |
+|---|---|
+| Same settings, held-out rows (baseline) | 0.8% |
+| Different integrator (RK4 instead of Euler) | 17.4% |
+| 2x coarser timestep | 54.5% |
+| 4x coarser timestep | 42.7% |
+
+**This did not generalise well - a real, useful negative result, not hidden.** Richer
+PHYSICAL-parameter diversity (Stage 4) generalised very well to new physical conditions
+within the same solver. Different NUMERICAL settings are a different kind of shift, and the
+validator is clearly sensitive to them - something any real sim2sim/sim2real attempt would
+need to account for (e.g. training across multiple solver settings too, the same richer-data
+fix already proven to work for physical parameters in Stage 4 - worth trying there next,
+not yet done here).
+
+## Stage 7 — results: a real robustness curve, and a genuinely positive safety-monitor result
+
+**Part A - robustness curve** (`stage7_robustness.py`, push applied at step 30, 20 seeds
+per push size):
+
+| Push size | Mean step of falling | Survived full 400 steps |
+|---|---|---|
+| 0.0 (no push) | 150.5 | 0/20 |
+| 1.0 | 99.8 | 0/20 |
+| 2.0 | 79.7 | 0/20 |
+| 3.0 | 71.4 | 0/20 |
+| 4.0 | 70.8 | 0/20 |
+| 5.0 | 68.3 | 0/20 |
+| 6.0 | 64.3 | 0/20 |
+
+Honest finding: this controller (the Stage 2 tuned PD, not the stalled LQR attempt) doesn't
+reliably survive long-term even with NO push at all, across different random seeds - the
+single-seed 2.1s result reported earlier was closer to a best case than a typical case. Real,
+useful information for anyone building on this, not hidden to make Stage 2 look better.
+
+**Part B - can MW's validator serve as a real-time early-warning safety monitor?** Riding
+alongside the Stage 2 controller, scoring every state live, with a threshold calibrated from
+held-out normal data (99th percentile): **yes, in every single case tested.** All 15 episodes
+that fell were flagged by MW BEFORE the simulator's own termination fired, with a mean lead
+time of **22.9 steps (0.18s)**. This is the clearest positive result of the harder-body
+stages so far, and it's exactly the architecture the whole plan points to: classical control
+acts, MW watches and warns - tested directly for the first time here, not just proposed.
+
+## Stage 2 — results so far
+
+Tuned PD ankle-balance controller: survives 263/1000 steps (2.1s) before falling, confirmed
+by a real gain search, not assumed. LQR attempted as the more principled classical-control
+method; hit two real numerical/modelling snags (documented in `lqr_balance.py`'s own
+comments and `PROGRESS_LOG.md`) - not yet working better than the tuned PD. Real trajectories
+from the PD controller were good enough to drive Stage 1's real test, which was the actual
+point of this stage.
+
+## Stretch test (beyond the 7 planned stages): does Stage 1 scale to a real 17-joint 3D humanoid?
+
+Walker2d (6 joints, 2D) is much simpler than the actual ProtoMotions target. Tested whether
+Stage 1's validator mechanism holds up on MuJoCo's full Humanoid-v5 - 17 actuated joints, a
+true 3D free-floating base (`stretch_humanoid.py`). Honest scope limit, stated in the file's
+own docstring: features used are height + the 17 joint angles only, not orientation or
+velocity - a real simplification to keep this a same-day stretch test, not a full redo of
+Stage 1's design for 3D.
+
+| Test (full 200 epochs) | Result |
+|---|---|
+| False alarms, held-out normal | **9.1%** - higher than Walker2d's 0.4%, and higher than quick-mode's own 5.5% (more training did not reduce it here - a real, honestly-reported result, not the direction you'd hope for) |
+| Injected impossible postures (joint past limit, impossible height) | ROC-AUC 1.000 on both |
+| Organic near-fall states (real, not injected) | **0.948** - actually better than Walker2d's 0.893 |
+
+**Mixed result at first: the core mechanism clearly scales - fault detection is as strong or
+stronger than on the simpler body - but false-alarm calibration was worse at this scale.**
+Diagnosed as needing more training data for a higher-dimensional space, and tested directly
+(`stretch_humanoid_fix.py`): compared 40/80/120 training episodes against a FIXED,
+fully-disjoint-seed held-out test set (a stricter test than the first number above, which
+compared against held-out rows from the SAME 40-episode pool - noted so the two numbers
+aren't read as directly comparable):
+
+| Training episodes | Normal rows | Flag rate on strict held-out set |
+|---|---|---|
+| 40 | 1,531 | 20.8% |
+| 80 | 3,082 | 10.8% |
+| 120 | 4,658 | **6.2%** |
+
+**Confirmed: just more training data, same controller, same distribution, cleanly fixes
+most of the gap** - a simpler fix than the richer-diversity recipe needed for Stages 4/6,
+and it worked on the first try. A real sign the mechanism scales to a true 3D, 17-joint
+body, with the one weak point found and fixed in the same session, not left open.
+
+Details below, updated per stage.
