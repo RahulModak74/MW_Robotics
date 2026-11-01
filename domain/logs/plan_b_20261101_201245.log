@@ -1,0 +1,2 @@
+  rows = 100, cols = 28, units = 2, wall = 0.1s
+  smoke test PASSED
