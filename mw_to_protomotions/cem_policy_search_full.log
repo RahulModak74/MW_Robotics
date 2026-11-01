@@ -1,0 +1,23 @@
+Running CEM: pop=60, generations=15, 2 seeds/candidate, cap 400 steps/rollout...
+  gen  0  pop_mean=  15.7  pop_best=  34.0  std_norm=4.361
+  gen  1  pop_mean=  29.2  pop_best= 152.0  std_norm=4.017
+  gen  2  pop_mean=  41.7  pop_best= 167.5  std_norm=3.771
+  gen  3  pop_mean=  61.3  pop_best= 206.5  std_norm=3.478
+  gen  4  pop_mean=  90.7  pop_best= 365.0  std_norm=3.253
+  gen  5  pop_mean= 109.0  pop_best= 358.5  std_norm=3.003
+  gen  6  pop_mean= 114.3  pop_best= 204.0  std_norm=2.910
+  gen  7  pop_mean= 132.9  pop_best= 307.0  std_norm=2.707
+  gen  8  pop_mean= 154.6  pop_best= 319.0  std_norm=2.586
+  gen  9  pop_mean= 159.7  pop_best= 303.0  std_norm=2.646
+  gen 10  pop_mean= 171.4  pop_best= 400.0  std_norm=2.473
+  gen 11  pop_mean= 175.6  pop_best= 400.0  std_norm=2.335
+  gen 12  pop_mean= 188.6  pop_best= 383.0  std_norm=2.295
+  gen 13  pop_mean= 196.7  pop_best= 299.0  std_norm=2.067
+  gen 14  pop_mean= 198.7  pop_best= 359.0  std_norm=2.009
+
+CEM search finished in 84.2s (CPU, serial, no GPU, no backprop)
+
+CEM policy, held-out seeds (10), cap 1000 steps: 208.3 steps mean
+untrained random policy, same held-out seeds:     15.9 steps mean
+
+For reference (from tune_balance.py, same env, PD controller): 263/1000 steps
