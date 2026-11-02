@@ -1,0 +1,486 @@
+# (root)                                                                
+
+===== app.py =====
+#!/usr/bin/env python3
+"""
+full_flow_animation/app.py
+============================
+Flask backend for the interactive MW robot demo. Loads the six cached
+checkpoints (run train_and_cache.py first), keeps server-side state for
+TWO named robots ("a", "b"), and exposes one route per behaviour plus a
+choreography endpoint that, if a sibling mw_agentic/ package is present
+(not part of this repo), drives both robots from its agentic layer - a
+recipe first, an LLM only when needed. Without it, /api/choreograph
+returns a clear 501 and every per-behaviour manual route still works
+unchanged. Every per-behaviour route returns a list of animation frames
+decoded from the matching trained manifold via robot_motion.compute_path()
+- see that file's docstring and README.md for exactly what is real.
+
+Run:
+    python train_and_cache.py     # once, trains + caches all six models
+    python app.py                 # then start the server
+    open http://127.0.0.1:5050
+"""
+import os, sys, time
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from flask import Flask, jsonify, request, send_from_directory
+
+from mw_framework import MWDetector
+import robot_motion as rm
+
+try:
+    from mw_agentic.orchestrate import choreograph as mw_choreograph
+except ImportError:
+    mw_choreograph = None
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+CKPT_DIR = os.path.join(HERE, "checkpoints")
+
+app = Flask(__name__, static_folder=os.path.join(HERE, "static"), static_url_path="")
+
+print("Loading cached checkpoints ...")
+DET = {}
+for name in ("flexible_robot", "joint_actuator", "planar_arm", "mobile_robot",
+            "legged_contact", "actuator_thermal"):
+    path = os.path.join(CKPT_DIR, f"{name}.pth")
+    if not os.path.exists(path):
+        raise SystemExit(f"Missing {path} - run 'python train_and_cache.py' first.")
+    DET[name] = MWDetector.load(path)
+print("All six models loaded.")
+
+
+def _default_state():
+    return {"theta1": 0.3, "theta2": 0.6, "joint_ref": 0.8,
+            "base_x": 0.0, "base_y": 0.0, "base_theta": 0.0,
+            "heat": 0.15, "last_activity": time.time()}
+
+
+# Two named robots ("a", "b"). The single-robot demo (index.html before the
+# choreography feature) always used robot "a" implicitly - every route below
+# still defaults to "a" so that page keeps working unchanged.
+STATES = {"a": _default_state(), "b": _default_state()}
+STATES["b"]["base_x"] = 1.5     # start the two robots apart, not stacked
+
+
+def bump_heat(robot: str, amount: float = 0.22) -> None:
+    s = STATES[robot]
+    s["heat"] = min(1.0, s["heat"] + amount)
+    s["last_activity"] = time.time()
+
+
+DOMAIN_EQ = {
+    "planar_arm": "forward-kinematics identity + Jacobian (velocity) identity",
+    "joint_actuator": "I*theta'' + b*theta' + k*theta = tau  (Newton's second law)",
+    "mobile_robot": "nonholonomic constraint: xdot*sin(theta) - ydot*cos(theta) = 0",
+    "legged_contact": "energy conservation: vz^2 + 2*g*z = v0^2",
+    "flexible_robot": "Euler-Bernoulli beam PDE: rho*A*w_tt + EI*w_xxxx = f",
+}
+
+
+def _run_tool(robot: str, tool: str, params: dict) -> dict:
+    """Shared by the per-behaviour routes AND /api/choreograph: run one
+    action for one robot's CURRENT state, advance that state, return
+    {frames, domain, equations}. Params match mw_agentic/choreography.py's
+    schema (dx, x/y, height, deflection, theta)."""
+    s = STATES[robot]
+    if tool == "walk":
+        frames, (xe, ye, the) = rm.base_move(DET["mobile_robot"], s["base_x"], s["base_y"],
+                                             s["base_theta"], s["base_x"] + params["dx"], s["base_y"])
+        s["base_x"], s["base_y"], s["base_theta"] = xe, ye, the
+        bump_heat(robot)
+        return {"frames": frames, "domain": "mobile_robot", "equations": DOMAIN_EQ["mobile_robot"]}
+    if tool == "reach":
+        frames, (t1, t2) = rm.arm_reach(DET["planar_arm"], s["theta1"], s["theta2"], params["x"], params["y"])
+        s["theta1"], s["theta2"] = t1, t2
+        bump_heat(robot)
+        return {"frames": frames, "domain": "planar_arm", "equations": DOMAIN_EQ["planar_arm"]}
+    if tool == "hop":
+        frames = rm.hop(DET["legged_contact"], launch_height=params["height"])
+        bump_heat(robot, 0.3)
+        return {"frames": frames, "domain": "legged_contact", "equations": DOMAIN_EQ["legged_contact"]}
+    if tool == "lift":
+        frames = rm.lift_payload(DET["flexible_robot"], deflection=params["deflection"])
+        bump_heat(robot, 0.18)
+        return {"frames": frames, "domain": "flexible_robot", "equations": DOMAIN_EQ["flexible_robot"]}
+    if tool == "joint":
+        frames = rm.joint_rotate(DET["joint_actuator"], s["joint_ref"], params["theta"])
+        s["joint_ref"] = params["theta"]
+        bump_heat(robot)
+        return {"frames": frames, "domain": "joint_actuator", "equations": DOMAIN_EQ["joint_actuator"]}
+    raise ValueError(f"unknown tool {tool!r}")
+
+
+@app.route("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
+
+
+@app.route("/api/state")
+def get_state():
+    robot = request.args.get("robot", "a")
+    return jsonify(STATES[robot])
+
+
+@app.route("/api/arm/reach", methods=["POST"])
+def arm_reach():
+    body = request.get_json(force=True)
+    robot = body.get("robot", "a")
+    out = _run_tool(robot, "reach", {"x": float(body["x"]), "y": float(body["y"])})
+    return jsonify(out)
+
+
+@app.route("/api/joint/rotate", methods=["POST"])
+def joint_rotate():
+    body = request.get_json(force=True)
+    robot = body.get("robot", "a")
+    out = _run_tool(robot, "joint", {"theta": float(body["theta"])})
+    return jsonify(out)
+
+
+@app.route("/api/base/move", methods=["POST"])
+def base_move():
+    body = request.get_json(force=True)
+    robot = body.get("robot", "a")
+    s = STATES[robot]
+    dx = float(body["x"]) - s["base_x"]      # the route's own contract is an absolute world x,y target;
+    out = _run_tool(robot, "walk", {"dx": dx})  # _run_tool takes a relative dx - convert once, here
+    return jsonify(out)
+
+
+@app.route("/api/hop", methods=["POST"])
+def hop():
+    body = request.get_json(silent=True) or {}
+    robot = body.get("robot", "a")
+    out = _run_tool(robot, "hop", {"height": float(body.get("height", 0.5))})
+    return jsonify(out)
+
+
+@app.route("/api/lift", methods=["POST"])
+def lift():
+    body = request.get_json(silent=True) or {}
+    robot = body.get("robot", "a")
+    out = _run_tool(robot, "lift", {"deflection": float(body.get("deflection", 0.7))})
+    return jsonify(out)
+
+
+@app.route("/api/thermal/status")
+def thermal_status():
+    robot = request.args.get("robot", "a")
+    s = STATES[robot]
+    elapsed = time.time() - s["last_activity"]
+    frames = rm.thermal_tick(DET["actuator_thermal"], heat_level=s["heat"])
+    frac = min(elapsed / 14.0, 1.0)
+    idx = min(int(frac * (len(frames) - 1)), len(frames) - 1)
+    current = frames[idx]
+    s["heat"] = max(0.02, s["heat"] * 0.985)
+    return jsonify({"excess": current["excess"], "T": current["T"],
+                   "domain": "actuator_thermal", "equations": DOMAIN_EQ.get("actuator_thermal", "")})
+
+
+@app.route("/api/choreograph", methods=["POST"])
+def choreograph_route():
+    """Ask mw_agentic for a choreography (recipe first, LLM only if needed -
+    see mw_agentic/orchestrate.py), then resolve every action into real
+    decoded frames by running it through the matching trained manifold, in
+    each robot's own time order. Returns the spec, which path was taken
+    (recipe/llm), how many model calls it cost, and the resolved per-action
+    frames for the frontend to schedule and play."""
+    if mw_choreograph is None:
+        return jsonify({"ok": False, "errors": ["mw_agentic is not installed - the "
+                       "agentic choreography layer is not part of this repo"]}), 501
+
+    body = request.get_json(force=True)
+    task = (body.get("task") or "").strip()
+    if not task:
+        return jsonify({"ok": False, "errors": ["task is required"]}), 400
+
+    result = mw_choreograph(task)
+    if not result["ok"]:
+        return jsonify(result), 422
+
+    spec = result["spec"]
+    by_robot = {"a": [], "b": []}
+    for action in spec["actions"]:
+        by_robot[action["robot"]].append(action)
+    for robot in by_robot:
+        by_robot[robot].sort(key=lambda a: a["t"])
+
+    resolved = []
+    for robot, actions in by_robot.items():
+        for action in actions:
+            out = _run_tool(robot, action["tool"], action["params"])
+            resolved.append({"robot": robot, "t": action["t"], "tool": action["tool"], **out})
+
+    return jsonify({**result, "resolved": resolved})
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5050, debug=False)
+
+===== robot_motion.py =====
+"""
+robot_motion.py
+================
+Turns a user interaction (a mouse click target) into an animation: a
+sequence of frames decoded from one of the six trained MW manifolds, using
+the SAME straight-line latent-interpolation mechanism measured in
+mujoco_experiments/02_forecaster_check.py and 03/04 (encode a start state,
+encode a target state, interpolate in latent space, decode each point).
+
+Nothing here re-derives physics from scratch for the animation: both the
+start and target states passed to each manifold are computed from the
+SAME exact closed-form formulas each domain was trained on
+(mw_framework.datasets' private _joint_response/_arm_fk/_unicycle_state/
+_beam_state/_thermal_state helpers), so what you see animate is the
+manifold's own interpolation between two states it recognises, not an
+invented trajectory.
+
+HONEST SCOPE: this is a demo/visualisation, not a validated controller.
+See full_flow_animation/README.md for exactly what is and is not real.
+"""
+from __future__ import annotations
+
+import math
+import numpy as np
+import torch
+
+from mw_framework.datasets import (
+    _joint_response, _arm_fk, _unicycle_state, _beam_state, _thermal_state,
+    L1, L2, G_NOM,
+)
+
+
+def wrap_angle(theta: float) -> float:
+    """Wrap to [-pi, pi]. mobile_robot trained on theta0 ~ Uniform(-pi, pi);
+    letting theta accumulate unwrapped across many moves pushes it further
+    out of the trained distribution each time - confirmed as the cause of a
+    68% positioning error after five chained moves before this fix."""
+    return math.atan2(math.sin(theta), math.cos(theta))
+
+
+def compute_path(det, start_row: dict, target_row: dict, feature_order, n_points: int = 16):
+    """Encode start_row and target_row (dicts: feature_name -> value), walk a
+    straight line between their latents, decode n_points frames. Returns a
+    list of n_points dicts, one per feature, matching mujoco_experiments'
+    tested mechanism exactly."""
+    norm, vae = det.norm_, det.vae_
+
+    def to_latent(row):
+        x = np.array([[row[f] for f in feature_order]])
+        xn = norm.transform(x)
+        xt = torch.tensor(xn, dtype=torch.float32)
+        with torch.no_grad():
+            mu, _ = vae.encode(xt)
+        return mu[0].detach().clone()
+
+    z0, z1 = to_latent(start_row), to_latent(target_row)
+    tt = torch.linspace(0, 1, n_points)[:, None]
+    path = (1 - tt) * z0 + tt * z1
+    with torch.no_grad():
+        phys = vae.to_physical(vae.decode(path))
+    frames = []
+    for i in range(n_points):
+        frames.append({k: float(v[i]) for k, v in phys.items()})
+    return frames
+
+
+# ── Per-behaviour wrappers: build physically-consistent start/target rows
+#    from the SAME closed-form formulas each domain trained on, then hand
+#    off to compute_path(). ──────────────────────────────────────────────
+
+def joint_rotate(det, current_theta_ref: float, target_theta_ref: float, n_points=16):
+    """joint_actuator: settle from the old set-point to a new one."""
+    theta0, omega0, alpha0, tau0, e0 = _joint_response(np.array([0.08]), np.array([current_theta_ref]))
+    theta1, omega1, alpha1, tau1, e1 = _joint_response(np.array([11.5]), np.array([target_theta_ref]))
+    start = {"t": 0.08, "theta": float(theta0[0]), "omega": float(omega0[0]),
+            "alpha": float(alpha0[0]), "tau": float(tau0[0]), "energy": float(e0[0])}
+    target = {"t": 11.5, "theta": float(theta1[0]), "omega": float(omega1[0]),
+             "alpha": float(alpha1[0]), "tau": float(tau1[0]), "energy": float(e1[0])}
+    from mw_framework.datasets import JOINT_FEATURES
+    return compute_path(det, start, target, JOINT_FEATURES, n_points)
+
+
+def arm_reach(det, cur_theta1: float, cur_theta2: float, target_x: float, target_y: float, n_points=16):
+    """planar_arm: 2-link inverse kinematics for the target, then interpolate
+    the resting-state reach (zero joint velocities at both ends)."""
+    r = math.hypot(target_x, target_y)
+    r = min(r, L1 + L2 - 1e-3)
+    r = max(r, abs(L1 - L2) + 1e-3)
+    cos_t2 = (r ** 2 - L1 ** 2 - L2 ** 2) / (2 * L1 * L2)
+    cos_t2 = max(-1.0, min(1.0, cos_t2))
+    t2 = math.acos(cos_t2)
+    k1, k2 = L1 + L2 * math.cos(t2), L2 * math.sin(t2)
+    t1 = math.atan2(target_y, target_x) - math.atan2(k2, k1)
+
+    x0, y0, xd0, yd0 = _arm_fk(cur_theta1, cur_theta2, 0.0, 0.0)
+    x1, y1, xd1, yd1 = _arm_fk(t1, t2, 0.0, 0.0)
+    start = {"theta1": cur_theta1, "theta2": cur_theta2, "theta1dot": 0.0, "theta2dot": 0.0,
+            "x": float(x0), "y": float(y0), "xdot": 0.0, "ydot": 0.0}
+    target = {"theta1": t1, "theta2": t2, "theta1dot": 0.0, "theta2dot": 0.0,
+             "x": float(x1), "y": float(y1), "xdot": 0.0, "ydot": 0.0}
+    from mw_framework.datasets import ARM_FEATURES
+    return compute_path(det, start, target, ARM_FEATURES, n_points), (t1, t2)
+
+
+def base_move(det, x0: float, y0: float, theta0: float, target_x: float, target_y: float,
+             n_points=16, n_segments_each=3):
+    """mobile_robot: turn to face the target, then drive straight to it - two
+    phases, each CHAINED through real intermediate checkpoints.
+
+    An earlier version used a single pure-pursuit circular arc (the tangent
+    arc through the target). That is only valid when the target is roughly
+    ahead of the robot; for a target behind or to the side it requires the
+    arc's "major" solution, which the formula did not handle, and testing
+    it (not assuming it was fine) showed the robot driving to a completely
+    wrong point. Turn-then-drive has no such ambiguity for any direction,
+    at the cost of being a less smooth, two-step motion rather than one
+    graceful curve - a correctness-for-elegance tradeoff made deliberately
+    after the arc version was shown to fail."""
+    from mw_framework.datasets import MOBILE_FEATURES
+
+    def chain(x0_, y0_, th0_, v, omega, T, n_seg):
+        checkpoint_ts = np.linspace(0.02, max(T, 0.05), n_seg + 1)
+        xs, ys, ths, xds, yds, thds = _unicycle_state(checkpoint_ts, x0_, y0_, th0_, v, omega)
+        frames_ = []
+        for i in range(n_seg):
+            start = {"x": float(xs[i]), "y": float(ys[i]), "theta": wrap_angle(float(ths[i])), "v": v, "omega": omega,
+                    "xdot": float(xds[i]), "ydot": float(yds[i]), "thetadot": float(thds[i])}
+            end = {"x": float(xs[i + 1]), "y": float(ys[i + 1]), "theta": wrap_angle(float(ths[i + 1])), "v": v, "omega": omega,
+                  "xdot": float(xds[i + 1]), "ydot": float(yds[i + 1]), "thetadot": float(thds[i + 1])}
+            seg_frames = compute_path(det, start, end, MOBILE_FEATURES, max(2, n_points // n_seg))
+            frames_.extend(seg_frames if i == 0 else seg_frames[1:])
+        return frames_, (float(xs[-1]), float(ys[-1]), wrap_angle(float(ths[-1])))
+
+    theta0 = wrap_angle(theta0)        # defend against any already-unwrapped theta in the caller's state
+    dx, dy = target_x - x0, target_y - y0
+    dist = max(math.hypot(dx, dy), 1e-6)
+    target_heading = math.atan2(dy, dx)
+    heading_err = math.atan2(math.sin(target_heading - theta0), math.cos(target_heading - theta0))
+
+    frames = []
+    x_cur, y_cur, th_cur = x0, y0, theta0
+    if abs(heading_err) > 0.08:                     # phase 1: rotate in place to face the target
+        omega_turn = max(-1.1, min(heading_err / 1.0, 1.1))
+        T_turn = abs(heading_err / omega_turn)
+        f, (x_cur, y_cur, th_cur) = chain(x_cur, y_cur, th_cur, 0.0, omega_turn, T_turn, n_segments_each)
+        frames.extend(f)
+    if dist > 0.05:                                  # phase 2: drive straight to the target
+        v = min(0.9, dist / 1.0)
+        T_drive = dist / v
+        f, (x_cur, y_cur, th_cur) = chain(x_cur, y_cur, th_cur, v, 0.0, T_drive, n_segments_each)
+        frames.extend(f if not frames else f[1:])
+    return frames, (x_cur, y_cur, th_cur)
+
+
+def hop(det, launch_height: float = 0.5, e: float = 0.8, n_points=16, n_segments=4):
+    """legged_contact: one ballistic hop of the given launch height.
+    CHAINED through n_segments real checkpoints spanning launch to landing
+    (same reason as base_move: a single hop across nearly the whole flight
+    badly undershoots the true apex)."""
+    v0 = math.sqrt(max(2.0 * G_NOM * launch_height, 1e-6))
+    t_apex = v0 / G_NOM
+    t_end = min(1.9 * t_apex, 2.5)
+
+    from mw_framework.datasets import LEGGED_FEATURES
+    checkpoint_ts = np.linspace(0.03, t_end, n_segments + 1)
+    z_cp = v0 * checkpoint_ts - 0.5 * G_NOM * checkpoint_ts ** 2
+    vz_cp = v0 - G_NOM * checkpoint_ts
+    frames = []
+    for i in range(n_segments):
+        start = {"t": float(checkpoint_ts[i]), "z": max(float(z_cp[i]), 0.0), "vz": float(vz_cp[i]), "v0": v0, "e": e}
+        target = {"t": float(checkpoint_ts[i + 1]), "z": max(float(z_cp[i + 1]), 0.0),
+                 "vz": float(vz_cp[i + 1]), "v0": v0, "e": e}
+        seg_frames = compute_path(det, start, target, LEGGED_FEATURES, max(2, n_points // n_segments))
+        frames.extend(seg_frames if i == 0 else seg_frames[1:])
+    return frames
+
+
+def lift_payload(det, deflection: float = 0.7, n_points=16):
+    """flexible_robot: a payload-induced deflection, settling under damping -
+    animates the arm's last segment flexing then recovering. EI_NOM=1.0
+    (flexible_robot.py's constant) so M = w_xx exactly, same as training."""
+    EI_NOM = 1.0
+    x = np.array([0.9])          # near the free (tip) end of the beam
+    w0, wt0, wxx0, e0 = _beam_state(x, 0.08, (deflection, 0.15 * deflection))
+    w1, wt1, wxx1, e1 = _beam_state(x, 23.0, (deflection, 0.15 * deflection))
+    start = {"x": 0.9, "t": 0.08, "w": float(w0[0]), "w_t": float(wt0[0]),
+            "w_xx": float(wxx0[0]), "M": EI_NOM * float(wxx0[0]), "energy": float(e0[0])}
+    target = {"x": 0.9, "t": 23.0, "w": float(w1[0]), "w_t": float(wt1[0]),
+             "w_xx": float(wxx1[0]), "M": EI_NOM * float(wxx1[0]), "energy": float(e1[0])}
+    from mw_framework.datasets import ROBOT_FEATURES
+    return compute_path(det, start, target, ROBOT_FEATURES, n_points)
+
+
+def thermal_tick(det, heat_level: float = 0.6, n_points=16):
+    """actuator_thermal: a heated state cooling back toward ambient -
+    polled periodically to animate the temperature gauge decaying."""
+    x = np.array([0.5])
+    T0, dTdx0, flux0, ex0 = _thermal_state(x, 0.1, heat_level, 0.2 * heat_level)
+    T1, dTdx1, flux1, ex1 = _thermal_state(x, 14.0, heat_level, 0.2 * heat_level)
+    start = {"x": 0.5, "t": 0.1, "T": float(T0[0]), "dTdx": float(dTdx0[0]),
+            "flux": float(flux0[0]), "excess": 1.0}
+    target = {"x": 0.5, "t": 14.0, "T": float(T1[0]), "dTdx": float(dTdx1[0]),
+             "flux": float(flux1[0]), "excess": 0.02}
+    from mw_framework.datasets import THERMAL_FEATURES
+    return compute_path(det, start, target, THERMAL_FEATURES, n_points)
+
+===== train_and_cache.py =====
+#!/usr/bin/env python3
+"""
+Train all six MW_Robotics domains once (on their SHIPPED closed-form
+datasets - the same ones examples/00..05 use, not MuJoCo; this demo is
+not a MuJoCo comparison, it's an interactive showcase of the six trained
+manifolds) and cache the checkpoints to ./checkpoints/*.pth, so app.py
+starts instantly instead of retraining every launch.
+
+Run once before starting the app:
+    python train_and_cache.py
+Re-run any time to retrain (e.g. after editing a domain's physics).
+"""
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import pyro
+
+from mw_framework import MWDetector
+from mw_framework.core import set_seed
+from mw_framework.datasets import (cantilever_beam, ROBOT_FEATURES,
+                                   joint_actuator, JOINT_FEATURES,
+                                   planar_arm, ARM_FEATURES,
+                                   mobile_robot, MOBILE_FEATURES,
+                                   legged_contact, LEGGED_FEATURES,
+                                   actuator_thermal, THERMAL_FEATURES)
+from mw_framework.domains import (FlexibleRobotVAE, JointActuatorVAE, PlanarArmVAE,
+                                  MobileRobotVAE, HoppingContactVAE, ActuatorThermalVAE)
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+CKPT_DIR = os.path.join(HERE, "checkpoints")
+os.makedirs(CKPT_DIR, exist_ok=True)
+
+DOMAINS = {
+    "flexible_robot":  (cantilever_beam, ROBOT_FEATURES, FlexibleRobotVAE),
+    "joint_actuator":  (joint_actuator, JOINT_FEATURES, JointActuatorVAE),
+    "planar_arm":      (planar_arm, ARM_FEATURES, PlanarArmVAE),
+    "mobile_robot":    (mobile_robot, MOBILE_FEATURES, MobileRobotVAE),
+    "legged_contact":  (legged_contact, LEGGED_FEATURES, HoppingContactVAE),
+    "actuator_thermal": (actuator_thermal, THERMAL_FEATURES, ActuatorThermalVAE),
+}
+
+
+def main():
+    for name, (gen, feats, cls) in DOMAINS.items():
+        path = os.path.join(CKPT_DIR, f"{name}.pth")
+        print(f"Training {name} ...", flush=True)
+        set_seed(0)
+        pyro.clear_param_store()
+        normal, _ = gen(n_normal=5000, n_per_anomaly=10, seed=0)
+        det = MWDetector(vae=cls(), epochs=200, lr=2e-3).fit(normal[feats])
+        det.save(path)
+        print(f"  saved {path}")
+    print("\nAll six domains cached. Start the app with: python app.py")
+
+
+if __name__ == "__main__":
+    main()
+

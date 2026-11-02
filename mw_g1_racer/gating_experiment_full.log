@@ -1,0 +1,12 @@
+/home/rahul/.local/lib/python3.10/site-packages/torch/cuda/__init__.py:188: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /__w/pytorch/pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return torch._C._cuda_getDeviceCount() > 0
+  gen 0: mean dist of best candidate = 30.245, mean std_norm = 0.853  (21.2s elapsed)
+  gen 1: mean dist of best candidate = 24.081, mean std_norm = 0.594  (40.0s elapsed)
+  gen 2: mean dist of best candidate = 20.534, mean std_norm = 0.417  (59.7s elapsed)
+
+Gating experiment result, 5000 held-out (s,s') pairs:
+  mean |a* - a|  = 0.6261  (threshold: < 0.20)
+  std  |a* - a|  = 0.3196  (threshold: < 0.40)
+  mean Euclidean ||a*-a|| per row = 1.6811 (out of a max possible 4.90)
+
+Spec section 8 decision: SYSTEMATICALLY BIASED but recoverable - proceed cautiously

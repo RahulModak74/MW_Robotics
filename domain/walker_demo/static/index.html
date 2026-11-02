@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>MW Walker2d — CEM + Manifold Demo</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; font:14px/1.45 -apple-system, Segoe UI, sans-serif; background:#0c0c10; color:#e8e8ee; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-weight: 600; margin: 0 0 4px; font-size: 20px; }
+  .sub { color:#8b8ba8; margin-bottom: 20px; font-size: 13px; }
+  .controls { display:flex; gap:10px; margin-bottom: 16px; flex-wrap: wrap; }
+  button { background:#1e1e2a; color:#e8e8ee; border:1px solid #333; padding:8px 14px;
+           border-radius:6px; cursor:pointer; font:inherit; }
+  button:hover { background:#26263a; }
+  button.active { background:#2e4f8c; border-color:#3c6acf; }
+  .grid { display:grid; grid-template-columns: 2fr 1fr; gap:16px; }
+  canvas { width:100%; background:#141420; border-radius:8px; border:1px solid #222; display:block; }
+  #stage { aspect-ratio: 16/9; }
+  #gauge { aspect-ratio: 16/9; }
+  .stats { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-top:12px; }
+  .stat { background:#141420; padding:10px; border-radius:6px; border:1px solid #222; }
+  .stat .label { color:#8b8ba8; font-size:11px; text-transform:uppercase; letter-spacing:.05em; }
+  .stat .value { font-size:16px; margin-top:4px; font-variant-numeric: tabular-nums; }
+  .equations { margin-top:16px; padding:12px; background:#141420; border-radius:6px;
+               border:1px solid #222; font-family: ui-monospace, monospace; font-size:12px;
+               color:#9d9db8; }
+  .equations .eq { padding: 2px 0; }
+  .status-ok { color:#4ade80; } .status-warn { color:#fbbf24; } .status-bad { color:#f87171; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>MW Walker2d — CEM + Manifold Demo</h1>
+  <div class="sub">Real MuJoCo physics. Policy found by CEM (no GPU, no backprop). MW distance shown live.</div>
+
+  <div class="controls">
+    <button data-policy="balance" class="active">balance (920-step policy)</button>
+    <button data-policy="walk">walk (forward-progress policy)</button>
+    <button id="push-btn">push test (kick at step 100)</button>
+    <button id="replay-btn" disabled>replay</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <canvas id="stage" width="960" height="540"></canvas>
+      <div class="stats">
+        <div class="stat"><div class="label">step</div><div class="value" id="s-step">—</div></div>
+        <div class="stat"><div class="label">forward (m)</div><div class="value" id="s-fwd">—</div></div>
+        <div class="stat"><div class="label">MW distance</div><div class="value" id="s-mw">—</div></div>
+        <div class="stat"><div class="label">status</div><div class="value" id="s-status">—</div></div>
+      </div>
+    </div>
+    <div>
+      <canvas id="gauge" width="480" height="270"></canvas>
+    </div>
+  </div>
+
+  <div class="equations" id="equations"></div>
+</div>
+
+<script>
+const stage = document.getElementById('stage');
+const gauge = document.getElementById('gauge');
+const sctx = stage.getContext('2d');
+const gctx = gauge.getContext('2d');
+const els = {
+  step: document.getElementById('s-step'),
+  fwd: document.getElementById('s-fwd'),
+  mw: document.getElementById('s-mw'),
+  status: document.getElementById('s-status'),
+  eq: document.getElementById('equations'),
+  replay: document.getElementById('replay-btn'),
+};
+
+let current = null;      // {qpos, qvel, mw_distances, forward_distance, ...}
+let playhead = 0;
+let playing = false;
+let raf = null;
+
+// ── stick figure from qpos: [rootx, rootz, rooty, thigh, leg, foot, thigh_l, leg_l, foot_l]
+function drawWalker(ctx, qpos, W, H) {
+  ctx.clearRect(0, 0, W, H);
+
+  const groundY = H * 0.85;
+  const scale = H * 0.55;          // metres → pixels
+  const cx = W * 0.42;
+
+  // follow the root x loosely so the robot stays on screen
+  const rx = cx + (qpos[0] - (current.qpos[Math.max(0, playhead-40)]?.[0] ?? qpos[0])) * scale * 0.15;
+
+  // ground
+  ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+
+  const [, rootz, rooty, tR, kR, fR, tL, kL, fL] = qpos;
+
+  // hip position
+  const hipX = rx;
+  const hipY = groundY - rootz * scale;
+
+  // torso: from hip, tilted by rooty
+  const torsoLen = 0.55 * scale;
+  const torsoX = hipX + Math.sin(rooty) * torsoLen;
+  const torsoY = hipY - Math.cos(rooty) * torsoLen;
+
+  // legs (thigh, shin) from hip
+  const thighLen = 0.42 * scale, shinLen = 0.42 * scale, footLen = 0.18 * scale;
+
+  function leg(thighA, kneeA, footA, colour) {
+    const a1 = rooty + thighA;
+    const kneeX = hipX - Math.sin(a1) * thighLen;
+    const kneeY = hipY + Math.cos(a1) * thighLen;
+    const a2 = a1 + kneeA;
+    const ankX = kneeX - Math.sin(a2) * shinLen;
+    const ankY = kneeY + Math.cos(a2) * shinLen;
+    const a3 = a2 + footA;
+    const toeX = ankX + Math.cos(a3) * footLen;
+    const toeY = ankY + Math.sin(a3) * footLen;
+    ctx.strokeStyle = colour; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(hipX, hipY); ctx.lineTo(kneeX, kneeY);
+    ctx.lineTo(ankX, ankY); ctx.lineTo(toeX, toeY);
+    ctx.stroke();
+  }
+
+  leg(tL, kL, fL, '#6b7280');   // back leg
+  // torso + head
+  ctx.strokeStyle = '#e8e8ee'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(torsoX, torsoY); ctx.stroke();
+  ctx.beginPath(); ctx.arc(torsoX, torsoY, 10, 0, Math.PI*2);
+  ctx.fillStyle = '#e8e8ee'; ctx.fill();
+
+  leg(tR, kR, fR, '#ffffff');   // front leg
+
+  // HUD
+  ctx.fillStyle = '#8b8ba8'; ctx.font = '12px ui-monospace';
+  ctx.fillText(`x = ${qpos[0].toFixed(2)} m`, 14, 22);
+}
+
+// ── MW gauge: distance over the last N steps + current threshold
+function drawGauge(ctx, mw, playhead, W, H) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0e0e18';
+  ctx.fillRect(0, 0, W, H);
+
+  const m = mw || [];
+  const N = Math.min(m.length, 300);
+  const start = Math.max(0, playhead - N);
+  const slice = m.slice(start, playhead);
+  const xpad = 30, ypad = 20;
+  const plotW = W - 2*xpad, plotH = H - 2*ypad;
+
+  // background grid
+  ctx.strokeStyle = '#1e1e2e'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = ypad + plotH * i / 4;
+    ctx.beginPath(); ctx.moveTo(xpad, y); ctx.lineTo(xpad+plotW, y); ctx.stroke();
+  }
+
+  // threshold line (calibrated μ + 2σ is typical; hardcode sensible default)
+  const threshold = 6.0;
+  const yThr = ypad + plotH * (1 - Math.min(threshold/10, 1));
+  ctx.strokeStyle = '#f87171'; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(xpad, yThr); ctx.lineTo(xpad+plotW, yThr); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // trace
+  if (slice.length > 1) {
+    const maxVal = Math.max(10, threshold * 1.5);
+    ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    slice.forEach((v, i) => {
+      const x = xpad + plotW * i / (N - 1);
+      const y = ypad + plotH * (1 - Math.min(v/maxVal, 1));
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // current dot
+    const vNow = slice[slice.length - 1];
+    const xNow = xpad + plotW * (slice.length - 1) / (N - 1);
+    const yNow = ypad + plotH * (1 - Math.min(vNow/maxVal, 1));
+    ctx.fillStyle = vNow > threshold ? '#f87171' : '#60a5fa';
+    ctx.beginPath(); ctx.arc(xNow, yNow, 4, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.fillStyle = '#8b8ba8'; ctx.font = '11px ui-monospace';
+  ctx.fillText('MW distance (last 300 steps)', 12, 14);
+  ctx.fillStyle = '#f87171';
+  ctx.fillText('threshold', xpad + plotW - 60, yThr - 4);
+}
+
+// ── playback
+function renderFrame(idx) {
+  if (!current || !current.qpos.length) return;
+  idx = Math.min(idx, current.qpos.length - 1);
+  playhead = idx;
+
+  drawWalker(sctx, current.qpos[idx], stage.width, stage.height);
+  drawGauge(gctx, current.mw_distances, idx, gauge.width, gauge.height);
+
+  const mw = current.mw_distances[idx];
+  els.step.textContent = `${idx + 1} / ${current.qpos.length}`;
+  els.fwd.textContent = (current.qpos[idx][0] - current.qpos[0][0]).toFixed(2);
+
+  if (current.mw_error) {
+    els.mw.textContent = 'n/a';
+    els.mw.title = current.mw_error;
+    els.status.textContent = 'MW OFF';
+    els.status.className = 'value status-warn';
+  } else if (mw != null) {
+    els.mw.textContent = mw.toFixed(2);
+    els.mw.title = '';
+    const status = mw > 6.0 ? 'THREAT' : mw > 3.0 ? 'WATCH' : 'OK';
+    els.status.textContent = status;
+    els.status.className = 'value ' +
+      (status === 'THREAT' ? 'status-bad' :
+       status === 'WATCH' ? 'status-warn' : 'status-ok');
+  } else {
+    els.mw.textContent = '—';
+    els.status.textContent = '—';
+    els.status.className = 'value';
+  }
+}
+
+function play() {
+  if (playing || !current) return;
+  playing = true;
+  const tick = () => {
+    if (!playing) return;
+    renderFrame(playhead + 1);
+    if (playhead >= current.qpos.length - 1) { playing = false; return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+
+function stop() { playing = false; if (raf) cancelAnimationFrame(raf); }
+
+async function runPolicy(policy, opts = {}) {
+  stop();
+  els.step.textContent = 'running…';
+  const res = await fetch('/api/walker/run', {
+    method: 'POST',
+    headers: {'content-type': 'application/json'},
+    body: JSON.stringify({ policy, max_steps: 600, ...opts }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    els.step.textContent = `error ${res.status}`;
+    console.error(t);
+    return;
+  }
+  current = await res.json();
+  playhead = 0;
+  if (current.mw_error) {
+    els.eq.innerHTML = `<div class="eq" style="color:#f87171">MW unavailable: ${current.mw_error}</div>` +
+                       (current.equations || []).map(e => `<div class="eq">· ${e}</div>`).join('');
+  } else {
+    els.eq.innerHTML = (current.equations || []).map(e => `<div class="eq">· ${e}</div>`).join('');
+  }
+  els.replay.disabled = false;
+  renderFrame(0);
+  play();
+}
+
+// policy buttons
+document.querySelectorAll('button[data-policy]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('button[data-policy]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    runPolicy(b.dataset.policy);
+  });
+});
+
+document.getElementById('push-btn').addEventListener('click', () => {
+  runPolicy('balance', { push_at: 100, push: 3.0, max_steps: 400 });
+});
+
+els.replay.addEventListener('click', () => {
+  if (!current) return;
+  playhead = 0;
+  renderFrame(0);
+  play();
+});
+
+// initial
+fetch('/api/walker/policies').then(r => r.json()).then(p => {
+  if (!p.mw_active) {
+    els.eq.innerHTML = '<div class="eq">MW detector not loaded — qpos will animate, MW distance will be empty</div>';
+  }
+  if (p.available && p.available.length) runPolicy(p.available[0]);
+});
+</script>
+</body>
+</html>
