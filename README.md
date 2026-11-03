@@ -8,6 +8,15 @@ of Isaac's training stack. **MW Robotics fills that gap** with a physics-constra
 (the Modak-Walawalkar method) that needs thousands of samples rather than billions, and is designed to deploy on a
 $500-class CPU.
 
+## What is the MW framework?
+
+MW is an advanced Monte Carlo approach: the high-dimensional sample space is cut down by Bayesian priors, and what remains
+is a low-dimensional **manifold**. Because the priors encode the physics of the system (for batteries, the DFN equations),
+the manifold *is* the solution set of those physical equations, not just a fit to data. Fibre bundles can then stitch several
+such systems together. The full theory and worked examples are in the public
+**[MW_Geometric_Intelligence](https://github.com/RahulModak74/MW_Geometric_Intelligence)** repository; this repo applies the
+method to robotics.
+
 ## The goal: CPU only, end to end
 
 No GPU for training. No GPU for deployment. No Omniverse, no Isaac, no licence server. Physics priors (joint and torque
