@@ -1,4 +1,4 @@
-# MW Robotics
+# MW Robotics (MW: Modak-Walawalkar) 
 
 **Humanoid control policies that train and run on a CPU — for teams who can't afford the Isaac stack.**
 
@@ -8,7 +8,7 @@ of Isaac's training stack. **MW Robotics fills that gap** with a physics-constra
 (the Modak-Walawalkar method) that needs thousands of samples rather than billions, and is designed to deploy on a
 $500-class CPU.
 
-## What is the MW framework?
+## What is the MW (Modak-Walawalkar) framework?
 
 MW is an advanced Monte Carlo approach: the high-dimensional sample space is cut down by Bayesian priors, and what remains
 is a low-dimensional **manifold**. Because the priors encode the physics of the system (for batteries, the DFN equations),
