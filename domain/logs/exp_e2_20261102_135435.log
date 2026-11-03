@@ -1,0 +1,42 @@
+E2 - rank-4 + velocity features on Humanoid-v5
+  DIM=265 (was 253 without velocities)
+  budget: pop=80, gens=30, max_steps=400
+  baseline: rank4_humanoid.py @ 30 gen = 99.0, @ 90 gen = 112.7
+
+  gen  0  pop_mean=   22.8  pop_best=   52.3  std_norm=4.722
+  gen  1  pop_mean=   23.7  pop_best=   50.0  std_norm=4.577
+  gen  2  pop_mean=   26.2  pop_best=   91.0  std_norm=4.447
+  gen  3  pop_mean=   24.1  pop_best=   71.7  std_norm=4.226
+  gen  4  pop_mean=   25.3  pop_best=   57.7  std_norm=4.181
+  gen  5  pop_mean=   28.5  pop_best=   71.3  std_norm=4.046
+  gen  6  pop_mean=   29.9  pop_best=   55.7  std_norm=3.780
+  gen  7  pop_mean=   39.1  pop_best=   70.0  std_norm=3.755
+  gen  8  pop_mean=   41.6  pop_best=   76.7  std_norm=3.511
+  gen  9  pop_mean=   46.6  pop_best=   86.0  std_norm=3.294
+  gen 10  pop_mean=   48.9  pop_best=   80.7  std_norm=3.173
+  gen 11  pop_mean=   54.4  pop_best=  103.7  std_norm=2.998
+  gen 12  pop_mean=   54.4  pop_best=   96.0  std_norm=2.940
+  gen 13  pop_mean=   61.7  pop_best=  113.7  std_norm=2.800
+  gen 14  pop_mean=   68.6  pop_best=  110.7  std_norm=2.752
+  gen 15  pop_mean=   71.9  pop_best=  109.3  std_norm=2.593
+  gen 16  pop_mean=   75.8  pop_best=  113.3  std_norm=2.416
+  gen 17  pop_mean=   79.0  pop_best=  133.3  std_norm=2.387
+  gen 18  pop_mean=   83.5  pop_best=  136.3  std_norm=2.337
+  gen 19  pop_mean=   82.4  pop_best=  163.3  std_norm=2.200
+  gen 20  pop_mean=   78.1  pop_best=  119.0  std_norm=2.156
+  gen 21  pop_mean=   90.9  pop_best=  136.7  std_norm=2.146
+  gen 22  pop_mean=   87.8  pop_best=  133.7  std_norm=2.124
+  gen 23  pop_mean=   89.8  pop_best=  135.7  std_norm=2.145
+  gen 24  pop_mean=   92.4  pop_best=  145.0  std_norm=1.876
+  gen 25  pop_mean=   92.0  pop_best=  139.3  std_norm=1.998
+  gen 26  pop_mean=  101.3  pop_best=  161.0  std_norm=1.787
+  gen 27  pop_mean=  101.3  pop_best=  136.7  std_norm=1.636
+  gen 28  pop_mean=   91.3  pop_best=  126.7  std_norm=1.589
+  gen 29  pop_mean=  104.0  pop_best=  146.3  std_norm=1.508
+
+CEM finished in 309.8s
+
+Held-out mean (20 seeds, cap 1000): 100.7 steps
+  rank4 baseline (30 gens, no vel): 99.0
+  rank4 baseline (90 gens, no vel): 112.7
+  random baseline: 26.1

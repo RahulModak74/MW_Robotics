@@ -1,0 +1,39 @@
+EXP_03 / E1 — VAE as Policy, Compression Test
+====================================================================
+loaded cem_best_theta.npy, |theta| = 4.401
+
+[1/5] collecting training data (100 rollouts)…
+  88972 (s, a) pairs, 23.5s
+
+[2/5] collecting held-out data (20 rollouts)…
+  14005 (s, a) pairs
+
+[3/5] training CVAE (latent_dim=8, hidden=64, beta=0.01)…
+/home/rahul/.local/lib/python3.10/site-packages/torch/autograd/graph.py:979: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /__w/pytorch/pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+    ep   1/200  loss=113.677  recon=111.9712  kl=170.580
+    ep  50/200  loss=0.077  recon=0.0689  kl=0.817
+    ep 100/200  loss=0.035  recon=0.0332  kl=0.198
+    ep 150/200  loss=0.043  recon=0.0403  kl=0.315
+    ep 200/200  loss=0.034  recon=0.0329  kl=0.110
+  trained in 719.8s
+
+[4/5] evaluating compression…
+  reconstruction error (held-out):  0.0002
+    (target: < 0.05 for 'VAE sees the data')
+  policy replacement error:         0.0002
+    (target: < 0.10 for 'VAE IS the policy')
+
+[5/5] evaluating rollouts…
+  deterministic (z = prior_mu):  mean 741.1 / 1000
+  stochastic    (z ~ prior):     mean 832.2 / 1000
+  original policy reference:     920.9 / 1000
+
+saved model to exp_03_cvae_balance.pt
+
+====================================================================
+VERDICT
+====================================================================
+MODERATE — VAE represents the policy, but lossily.
+  → sweep latent_dim (4, 8, 16) and beta (0.01, 0.1, 0.5)
+====================================================================

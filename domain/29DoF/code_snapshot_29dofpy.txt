@@ -1,0 +1,404 @@
+# (root)                                                                
+
+===== pd_humanoid.py =====
+#!/usr/bin/env python3
+"""
+Disambiguation test #2: does a hand-designed PD balance controller (no
+CEM, no learning at all) also plateau near ~100 steps on Humanoid-v5, or
+does it do much better? If even a hand-tuned classical controller
+struggles similarly, that confirms the bottleneck is 3D balance itself
+(a task property), not something specific to CEM/rank-k search (a
+method property) - the same disambiguation Walker2d's tune_balance.py
+provided for the 2D case, now run on the 3D body.
+
+Simple PD toward an upright pose, with a tilt-correction term using the
+quaternion's x/y components as small-angle roll/pitch proxies (qpos[4]
+~roll-ish, qpos[5]~pitch-ish for small tilts from upright [1,0,0,0]).
+"""
+import sys
+import numpy as np
+import gymnasium as gym
+
+# joint order: abdomen_z,y,x | r_hip_x,z,y | r_knee | l_hip_x,z,y | l_knee | arms...
+KP = np.array([2,2,2,  3,2,3, 3,  3,2,3, 3,  1,1,1, 1,1,1], dtype=float)
+KD = np.array([0.3]*17)
+TARGET = np.zeros(17)
+TARGET[6] = -0.3   # right knee - slight bend
+TARGET[10] = -0.3  # left knee - slight bend
+BAL_KP, BAL_KD = 8.0, 1.5
+
+
+def controller(data):
+    qpos_j = data.qpos[7:24]
+    qvel_j = data.qvel[6:23]
+    roll_proxy = data.qpos[4]
+    pitch_proxy = data.qpos[5]
+    roll_rate = data.qvel[4]
+    pitch_rate = data.qvel[5]
+
+    target = TARGET.copy()
+    pitch_corr = -BAL_KP * pitch_proxy - BAL_KD * pitch_rate
+    roll_corr = -BAL_KP * roll_proxy - BAL_KD * roll_rate
+    # hip_y (index 2 of each leg's 3) controls fwd/back; hip_x (index 0) controls side
+    target[2] += pitch_corr   # right hip_y
+    target[8] += pitch_corr   # left hip_y
+    target[0] += roll_corr    # right hip_x
+    target[6-6+0] = target[0]  # (no-op, keeping clarity)
+    target[7] += roll_corr    # left hip_x
+
+    torque = KP * (target - qpos_j) - KD * qvel_j
+    return np.clip(torque, -0.4, 0.4)
+
+
+def rollout(env, seed, max_steps):
+    obs, info = env.reset(seed=seed)
+    data = env.unwrapped.data
+    steps = 0
+    for t in range(max_steps):
+        act = controller(data)
+        obs, r, term, trunc, info = env.step(act)
+        steps += 1
+        if term:
+            break
+    return steps
+
+
+if __name__ == "__main__":
+    env = gym.make("Humanoid-v5")
+    seeds = list(range(100, 120))
+    results = [rollout(env, s, 1000) for s in seeds]
+    env.close()
+    print(f"Hand-designed PD balance controller, Humanoid-v5, 20 held-out seeds:")
+    print(f"  mean = {np.mean(results):.1f}  individual = {results}")
+    print(f"  for reference: random=26.1, flat-linear-CEM=97.2, rank4-CEM=112.7")
+
+===== rank4_humanoid_legsonly.py =====
+#!/usr/bin/env python3
+"""
+Disambiguation test: rank4_humanoid.py plateaued around 100-170/1000 steps
+even with 3x the search budget - a genuine plateau, not a budget problem.
+Two possible explanations: (a) still too many joints/DoF for this search
+budget, or (b) Humanoid-v5's TRUE 3D balance is just a harder problem
+than Walker2d's 2D-constrained one, independent of joint count (arms
+don't touch the ground and barely affect falling dynamics either way).
+
+This test freezes the 6 arm joints (both shoulders x2, both elbows),
+leaving 11 active joints (abdomen x3, hips x3 x2, knees x2) - closer to
+the doc's "legs-only, no arms" intermediate. If THIS also plateaus near
+the 17-DoF result, that's evidence for (b): the bottleneck is 3D balance
+itself, not joint count, and a true fix needs a genuinely 2D-constrained
+or more-capable architecture, not just fewer DoF.
+"""
+import sys, os, time
+import numpy as np
+import gymnasium as gym
+
+# Humanoid-v5 joint order: abdomen_z,y,x(0-2), r_hip_x,z,y(3-5), r_knee(6),
+# l_hip_x,z,y(7-9), l_knee(10), r_shoulder1,2(11-12), r_elbow(13),
+# l_shoulder1,2(14-15), l_elbow(16)
+ACTIVE_IDX = list(range(0, 11))   # abdomen + both legs
+FROZEN_IDX = list(range(11, 17))  # both arms
+
+ACT_DIM = len(ACTIVE_IDX)  # 11
+FEAT_DIM = 1 + 4 + 17 + 3 + 17  # same full feature set (42) - sees everything,
+                                 # just doesn't ACT on the arms
+RANK = 4
+DIM = RANK * FEAT_DIM + ACT_DIM * RANK + ACT_DIM  # 168 + 44 + 11 = 223
+
+
+def get_features(data):
+    return np.concatenate([
+        [data.qpos[2]], data.qpos[3:7], data.qpos[7:24],
+        data.qvel[3:6], data.qvel[6:23],
+    ])
+
+
+def unpack(theta):
+    i = RANK * FEAT_DIM
+    j = i + ACT_DIM * RANK
+    V = theta[:i].reshape(RANK, FEAT_DIM)
+    U = theta[i:j].reshape(ACT_DIM, RANK)
+    b = theta[j:]
+    return V, U, b
+
+
+def policy_action(theta, feat):
+    V, U, b = unpack(theta)
+    z = V @ feat
+    active = 0.4 * np.tanh(U @ z + b)
+    full = np.zeros(17)
+    full[ACTIVE_IDX] = active
+    return full  # frozen joints get 0 torque
+
+
+def rollout(theta, env, seed, max_steps):
+    obs, info = env.reset(seed=seed)
+    data = env.unwrapped.data
+    steps = 0
+    for t in range(max_steps):
+        feat = get_features(data)
+        act = policy_action(theta, feat)
+        obs, r, term, trunc, info = env.step(act)
+        steps += 1
+        if term:
+            break
+    return steps
+
+
+def fitness(theta, env, seeds, max_steps):
+    return np.mean([rollout(theta, env, s, max_steps) for s in seeds])
+
+
+def cem(pop_size=80, generations=30, max_steps=400, n_eval_seeds=3, seed=0):
+    rng = np.random.default_rng(seed)
+    env = gym.make("Humanoid-v5")
+    mean = np.zeros(DIM)
+    std = np.ones(DIM) * 0.3
+    n_elite = max(1, int(pop_size * 0.2))
+    for gen in range(generations):
+        pop = mean + std * rng.standard_normal((pop_size, DIM))
+        gen_seeds = rng.integers(0, 100_000, size=n_eval_seeds).tolist()
+        fits = np.array([fitness(theta, env, gen_seeds, max_steps) for theta in pop])
+        elite_idx = np.argsort(fits)[-n_elite:]
+        elite = pop[elite_idx]
+        mean = elite.mean(axis=0)
+        std = elite.std(axis=0) + 1e-3
+        print(f"  gen {gen:2d}  pop_mean={fits.mean():7.1f}  pop_best={fits.max():7.1f}  "
+              f"std_norm={np.linalg.norm(std):.3f}", flush=True)
+    env.close()
+    return mean
+
+
+if __name__ == "__main__":
+    gens = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+    print(f"Rank-4, ARMS FROZEN (11 active DoF, DIM={DIM} params), "
+          f"pop=80, gens={gens}, max_steps=400")
+    t0 = time.time()
+    best_theta = cem(generations=gens)
+    print(f"\nCEM finished in {time.time()-t0:.1f}s", flush=True)
+
+    env = gym.make("Humanoid-v5")
+    held_out_perf = fitness(best_theta, env, list(range(100, 120)), max_steps=1000)
+    env.close()
+    print(f"legs-only rank-4 policy, held-out (20 seeds), cap 1000: {held_out_perf:.1f} steps")
+    print(f"full-17-DoF rank-4 reference (90 gens): 112.7 steps")
+    print(f"full-17-DoF flat-linear reference (30 gens): 97.2 steps")
+    print(f"random baseline: 26.1 steps")
+    np.save("rank4_humanoid_legsonly_theta.npy", best_theta)
+
+===== rank4_humanoid.py =====
+#!/usr/bin/env python3
+"""
+The natural next test after rank4_walker.py's clean pass (896.2 vs 920.9,
+97.3% match) and cem_humanoid.py's confirmation that the dimensionality
+wall is real at 731 flat params on Humanoid-v5 (97.2/1000, barely above
+random's 26.1 - the SAME budget that nearly solves Walker2d). Does a
+rank-4 head recover what the flat policy lost, on Humanoid, the same
+way it matched linear on Walker2d?
+
+a = 0.4 * tanh(U @ (V @ phi(s)) + b)
+V: (4, 42), U: (17, 4), b: (17,) -> 168 + 68 + 17 = 253 params
+(close to REALISTIC_CLAIMS_NEXTSTEPS_NOV2nd.md's own estimate, "~265")
+
+Same features, same fitness (survival steps), same budget (pop=80,
+gens=30, max_steps=400) as cem_humanoid.py, for a clean before/after.
+"""
+import sys, os, time
+import numpy as np
+import gymnasium as gym
+
+ACT_DIM = 17
+FEAT_DIM = 42
+RANK = 4
+DIM = RANK * FEAT_DIM + ACT_DIM * RANK + ACT_DIM  # 253
+
+
+def get_features(data):
+    return np.concatenate([
+        [data.qpos[2]],
+        data.qpos[3:7],
+        data.qpos[7:24],
+        data.qvel[3:6],
+        data.qvel[6:23],
+    ])
+
+
+def unpack(theta):
+    i = RANK * FEAT_DIM
+    j = i + ACT_DIM * RANK
+    V = theta[:i].reshape(RANK, FEAT_DIM)
+    U = theta[i:j].reshape(ACT_DIM, RANK)
+    b = theta[j:]
+    return V, U, b
+
+
+def policy_action(theta, feat):
+    V, U, b = unpack(theta)
+    z = V @ feat
+    return 0.4 * np.tanh(U @ z + b)
+
+
+def rollout(theta, env, seed, max_steps):
+    obs, info = env.reset(seed=seed)
+    data = env.unwrapped.data
+    steps = 0
+    for t in range(max_steps):
+        feat = get_features(data)
+        act = policy_action(theta, feat)
+        obs, r, term, trunc, info = env.step(act)
+        steps += 1
+        if term:
+            break
+    return steps
+
+
+def fitness(theta, env, seeds, max_steps):
+    return np.mean([rollout(theta, env, s, max_steps) for s in seeds])
+
+
+def cem(pop_size=80, generations=30, max_steps=400, n_eval_seeds=3, seed=0):
+    rng = np.random.default_rng(seed)
+    env = gym.make("Humanoid-v5")
+    mean = np.zeros(DIM)
+    std = np.ones(DIM) * 0.3
+    n_elite = max(1, int(pop_size * 0.2))
+    for gen in range(generations):
+        pop = mean + std * rng.standard_normal((pop_size, DIM))
+        gen_seeds = rng.integers(0, 100_000, size=n_eval_seeds).tolist()
+        fits = np.array([fitness(theta, env, gen_seeds, max_steps) for theta in pop])
+        elite_idx = np.argsort(fits)[-n_elite:]
+        elite = pop[elite_idx]
+        mean = elite.mean(axis=0)
+        std = elite.std(axis=0) + 1e-3
+        print(f"  gen {gen:2d}  pop_mean={fits.mean():7.1f}  pop_best={fits.max():7.1f}  "
+              f"std_norm={np.linalg.norm(std):.3f}", flush=True)
+    env.close()
+    return mean
+
+
+if __name__ == "__main__":
+    gens = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+    print(f"Rank-4 head on Humanoid-v5: DIM={DIM} params (vs flat linear's 731), "
+          f"pop=80, gens={gens}, max_steps=400")
+    t0 = time.time()
+    best_theta = cem(generations=gens)
+    print(f"\nCEM finished in {time.time()-t0:.1f}s", flush=True)
+
+    env = gym.make("Humanoid-v5")
+    held_out_perf = fitness(best_theta, env, list(range(100, 120)), max_steps=1000)
+    env.close()
+    print(f"rank-4 policy, held-out (20 seeds), cap 1000: {held_out_perf:.1f} steps")
+    print(f"flat-linear reference (cem_humanoid.py, same budget): 97.2 steps")
+    print(f"random baseline (same seeds): 26.1 steps")
+    np.save("rank4_humanoid_theta.npy", best_theta)
+
+===== rank4_walker.py =====
+#!/usr/bin/env python3
+"""
+REALISTIC_CLAIMS_NEXTSTEPS_NOV2nd.md's own load-bearing experiment, run
+before any 29-DoF attempt: does a rank-4 head match the proven 96-param
+linear policy on Walker2d? "If rank-4 fails on 6 DoF, the scaling
+hypothesis is already broken and no amount of G1 work will fix it."
+
+Same everything as mw_to_protomotions/cem_policy_search.py (features,
+fitness=survival steps, CEM mechanics) and the SAME pop/gens/max_steps
+that produced the proven 920.9-step linear-policy result
+(domain/PLAN_A_PASSED.md: pop=80, gens=30, max_steps=400) - only the
+policy parameterisation changes:
+
+  linear:  a = tanh(W @ phi(s) + b),        W: (6,15)          -> 96 params
+  rank-4:  a = tanh(U @ (V @ phi(s)) + b),  V: (4,15), U: (6,4) -> 90 params
+
+Direct, apples-to-apples comparison, not a re-estimate.
+"""
+import sys, os, time
+import numpy as np
+import gymnasium as gym
+
+ACT_DIM = 6
+FEAT_DIM = 15
+RANK = 4
+DIM = RANK * FEAT_DIM + ACT_DIM * RANK + ACT_DIM  # 60 + 24 + 6 = 90
+
+
+def get_features(data):
+    return np.concatenate([
+        [data.qpos[2], data.qvel[2], data.qpos[1]],
+        data.qpos[3:9],
+        data.qvel[3:9],
+    ])
+
+
+def unpack(theta):
+    i = RANK * FEAT_DIM
+    j = i + ACT_DIM * RANK
+    V = theta[:i].reshape(RANK, FEAT_DIM)
+    U = theta[i:j].reshape(ACT_DIM, RANK)
+    b = theta[j:]
+    return V, U, b
+
+
+def policy_action(theta, feat):
+    V, U, b = unpack(theta)
+    z = V @ feat
+    return np.tanh(U @ z + b)
+
+
+def rollout(theta, seed, max_steps):
+    env = gym.make("Walker2d-v5", exclude_current_positions_from_observation=False)
+    obs, info = env.reset(seed=seed)
+    data = env.unwrapped.data
+    steps = 0
+    for t in range(max_steps):
+        feat = get_features(data)
+        act = policy_action(theta, feat)
+        obs, r, term, trunc, info = env.step(act)
+        steps += 1
+        if term:
+            break
+    env.close()
+    return steps
+
+
+def fitness(theta, seeds, max_steps):
+    return np.mean([rollout(theta, s, max_steps) for s in seeds])
+
+
+def cem(pop_size=80, elite_frac=0.2, generations=30, max_steps=400,
+        eval_seeds=(0, 1), seed=0):
+    rng = np.random.default_rng(seed)
+    mean = np.zeros(DIM)
+    std = np.ones(DIM) * 0.5
+    n_elite = max(1, int(pop_size * elite_frac))
+    for gen in range(generations):
+        pop = mean + std * rng.standard_normal((pop_size, DIM))
+        fits = np.array([fitness(theta, eval_seeds, max_steps) for theta in pop])
+        elite_idx = np.argsort(fits)[-n_elite:]
+        elite = pop[elite_idx]
+        mean = elite.mean(axis=0)
+        std = elite.std(axis=0) + 1e-3
+        print(f"  gen {gen:2d}  pop_mean={fits.mean():6.1f}  pop_best={fits.max():6.1f}  "
+              f"std_norm={np.linalg.norm(std):.3f}", flush=True)
+    return mean
+
+
+if __name__ == "__main__":
+    print(f"Rank-4 head on Walker2d: DIM={DIM} params (vs linear's 96), "
+          f"pop=80, gens=30, max_steps=400 - identical budget to the proven "
+          f"linear-policy run (920.9 steps held-out)")
+    t0 = time.time()
+    best_theta = cem()
+    train_time = time.time() - t0
+    print(f"\nCEM search finished in {train_time:.1f}s", flush=True)
+
+    held_out_seeds = list(range(100, 120))
+    rank4_perf = fitness(best_theta, held_out_seeds, max_steps=1000)
+    print(f"rank-4 policy, held-out seeds (20), cap 1000 steps: {rank4_perf:.1f} steps mean")
+    print(f"linear-policy reference (same held-out protocol, PLAN_A_PASSED.md): 920.9 steps")
+
+    rng = np.random.default_rng(999)
+    random_theta = rng.standard_normal(DIM) * 0.5
+    random_perf = fitness(random_theta, held_out_seeds, max_steps=1000)
+    print(f"untrained random policy, same held-out seeds: {random_perf:.1f} steps")
+    np.save("rank4_walker_theta.npy", best_theta)
+

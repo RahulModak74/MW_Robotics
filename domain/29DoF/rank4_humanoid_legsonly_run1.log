@@ -1,0 +1,37 @@
+Rank-4, ARMS FROZEN (11 active DoF, DIM=223 params), pop=80, gens=30, max_steps=400
+  gen  0  pop_mean=   24.0  pop_best=   52.7  std_norm=4.347
+  gen  1  pop_mean=   23.3  pop_best=   54.0  std_norm=4.317
+  gen  2  pop_mean=   23.9  pop_best=   51.7  std_norm=4.162
+  gen  3  pop_mean=   25.3  pop_best=   67.3  std_norm=3.984
+  gen  4  pop_mean=   29.3  pop_best=   69.0  std_norm=3.959
+  gen  5  pop_mean=   26.8  pop_best=   53.7  std_norm=3.728
+  gen  6  pop_mean=   28.6  pop_best=   67.0  std_norm=3.644
+  gen  7  pop_mean=   32.2  pop_best=   70.7  std_norm=3.522
+  gen  8  pop_mean=   37.3  pop_best=   75.3  std_norm=3.519
+  gen  9  pop_mean=   40.9  pop_best=   73.7  std_norm=3.435
+  gen 10  pop_mean=   43.9  pop_best=   76.0  std_norm=3.244
+  gen 11  pop_mean=   46.3  pop_best=   81.3  std_norm=3.095
+  gen 12  pop_mean=   50.2  pop_best=   90.0  std_norm=2.947
+  gen 13  pop_mean=   49.8  pop_best=   95.7  std_norm=2.768
+  gen 14  pop_mean=   57.3  pop_best=   89.0  std_norm=2.689
+  gen 15  pop_mean=   59.2  pop_best=   96.7  std_norm=2.586
+  gen 16  pop_mean=   63.5  pop_best=  102.7  std_norm=2.404
+  gen 17  pop_mean=   62.4  pop_best=  104.3  std_norm=2.293
+  gen 18  pop_mean=   60.8  pop_best=   97.0  std_norm=2.193
+  gen 19  pop_mean=   67.5  pop_best=  110.7  std_norm=2.028
+  gen 20  pop_mean=   67.9  pop_best=   95.7  std_norm=1.963
+  gen 21  pop_mean=   67.2  pop_best=  115.0  std_norm=1.908
+  gen 22  pop_mean=   67.7  pop_best=  106.7  std_norm=1.813
+  gen 23  pop_mean=   70.2  pop_best=  118.7  std_norm=1.756
+  gen 24  pop_mean=   74.4  pop_best=  111.7  std_norm=1.766
+  gen 25  pop_mean=   75.3  pop_best=  124.3  std_norm=1.760
+  gen 26  pop_mean=   78.0  pop_best=  118.0  std_norm=1.658
+  gen 27  pop_mean=   81.3  pop_best=  127.7  std_norm=1.600
+  gen 28  pop_mean=   79.1  pop_best=  122.7  std_norm=1.584
+  gen 29  pop_mean=   82.3  pop_best=  118.0  std_norm=1.494
+
+CEM finished in 345.7s
+legs-only rank-4 policy, held-out (20 seeds), cap 1000: 102.0 steps
+full-17-DoF rank-4 reference (90 gens): 112.7 steps
+full-17-DoF flat-linear reference (30 gens): 97.2 steps
+random baseline: 26.1 steps

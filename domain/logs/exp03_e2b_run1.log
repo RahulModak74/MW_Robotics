@@ -1,0 +1,10 @@
+collected 53526 train / 10225 held-out pairs in 13s
+    ep   1/200  loss=94.915  recon=93.6410  kl=127.439
+    ep  50/200  loss=0.408  recon=0.3992  kl=0.926
+    ep 100/200  loss=0.310  recon=0.3052  kl=0.512
+    ep 150/200  loss=0.315  recon=0.3119  kl=0.357
+    ep 200/200  loss=0.308  recon=0.3017  kl=0.671
+policy replacement error (held-out): 0.0036
+original walk policy : fwd 1.44 m (median 1.63), steps 558.1/600
+walk-trained CVAE    : fwd 1.85 m (median 1.79), steps 549.5/600
+ratio fwd CVAE/orig  : 1.29

@@ -1,0 +1,36 @@
+Rank-4 head on Humanoid-v5: DIM=253 params (vs flat linear's 731), pop=80, gens=30, max_steps=400 - identical budget to cem_humanoid.py's flat-linear run (97.2 steps held-out)
+  gen  0  pop_mean=   22.3  pop_best=   45.7  std_norm=4.542
+  gen  1  pop_mean=   22.1  pop_best=   46.3  std_norm=4.495
+  gen  2  pop_mean=   23.0  pop_best=   61.3  std_norm=4.326
+  gen  3  pop_mean=   24.4  pop_best=   65.7  std_norm=4.188
+  gen  4  pop_mean=   25.8  pop_best=   54.7  std_norm=4.051
+  gen  5  pop_mean=   29.9  pop_best=   71.0  std_norm=3.910
+  gen  6  pop_mean=   32.6  pop_best=   66.7  std_norm=3.766
+  gen  7  pop_mean=   33.4  pop_best=   73.0  std_norm=3.679
+  gen  8  pop_mean=   38.6  pop_best=   73.7  std_norm=3.557
+  gen  9  pop_mean=   45.1  pop_best=   92.0  std_norm=3.339
+  gen 10  pop_mean=   48.0  pop_best=   90.7  std_norm=3.258
+  gen 11  pop_mean=   45.3  pop_best=   87.3  std_norm=3.159
+  gen 12  pop_mean=   55.4  pop_best=   88.3  std_norm=2.932
+  gen 13  pop_mean=   60.3  pop_best=  106.7  std_norm=2.842
+  gen 14  pop_mean=   60.1  pop_best=   88.0  std_norm=2.769
+  gen 15  pop_mean=   61.4  pop_best=  101.7  std_norm=2.748
+  gen 16  pop_mean=   63.4  pop_best=  101.3  std_norm=2.661
+  gen 17  pop_mean=   63.1  pop_best=   88.7  std_norm=2.492
+  gen 18  pop_mean=   67.2  pop_best=  103.3  std_norm=2.457
+  gen 19  pop_mean=   68.9  pop_best=  108.7  std_norm=2.459
+  gen 20  pop_mean=   72.6  pop_best=  118.0  std_norm=2.333
+  gen 21  pop_mean=   70.2  pop_best=  107.0  std_norm=2.354
+  gen 22  pop_mean=   70.9  pop_best=  125.0  std_norm=2.269
+  gen 23  pop_mean=   76.2  pop_best=  120.7  std_norm=2.192
+  gen 24  pop_mean=   77.0  pop_best=  117.0  std_norm=2.033
+  gen 25  pop_mean=   84.5  pop_best=  126.0  std_norm=1.951
+  gen 26  pop_mean=   78.8  pop_best=  120.7  std_norm=1.816
+  gen 27  pop_mean=   90.6  pop_best=  135.0  std_norm=1.693
+  gen 28  pop_mean=   86.8  pop_best=  126.7  std_norm=1.652
+  gen 29  pop_mean=   91.6  pop_best=  140.7  std_norm=1.628
+
+CEM finished in 360.6s
+rank-4 policy, held-out (20 seeds), cap 1000: 99.0 steps
+flat-linear reference (cem_humanoid.py, same budget): 97.2 steps
+random baseline (same seeds): 26.1 steps

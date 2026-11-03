@@ -1,0 +1,36 @@
+Rank-4 head on Walker2d: DIM=90 params (vs linear's 96), pop=80, gens=30, max_steps=400 - identical budget to the proven linear-policy run (920.9 steps held-out)
+  gen  0  pop_mean=  17.3  pop_best=  71.5  std_norm=4.504
+  gen  1  pop_mean=  17.7  pop_best=  73.5  std_norm=4.404
+  gen  2  pop_mean=  24.6  pop_best=  79.5  std_norm=4.319
+  gen  3  pop_mean=  22.2  pop_best=  78.5  std_norm=4.170
+  gen  4  pop_mean=  30.8  pop_best= 147.0  std_norm=3.936
+  gen  5  pop_mean=  38.2  pop_best= 133.0  std_norm=3.791
+  gen  6  pop_mean=  45.4  pop_best= 142.5  std_norm=3.737
+  gen  7  pop_mean=  53.6  pop_best= 137.0  std_norm=3.555
+  gen  8  pop_mean=  63.0  pop_best= 200.5  std_norm=3.277
+  gen  9  pop_mean=  99.8  pop_best= 302.5  std_norm=3.138
+  gen 10  pop_mean= 106.4  pop_best= 267.5  std_norm=3.004
+  gen 11  pop_mean= 125.8  pop_best= 327.5  std_norm=2.854
+  gen 12  pop_mean= 148.5  pop_best= 309.0  std_norm=2.677
+  gen 13  pop_mean= 175.6  pop_best= 368.0  std_norm=2.524
+  gen 14  pop_mean= 171.8  pop_best= 317.5  std_norm=2.247
+  gen 15  pop_mean= 189.7  pop_best= 360.0  std_norm=2.192
+  gen 16  pop_mean= 186.0  pop_best= 381.5  std_norm=2.100
+  gen 17  pop_mean= 196.4  pop_best= 342.0  std_norm=1.957
+  gen 18  pop_mean= 202.5  pop_best= 379.5  std_norm=1.750
+  gen 19  pop_mean= 225.2  pop_best= 400.0  std_norm=1.615
+  gen 20  pop_mean= 248.1  pop_best= 400.0  std_norm=1.521
+  gen 21  pop_mean= 263.6  pop_best= 400.0  std_norm=1.448
+  gen 22  pop_mean= 283.6  pop_best= 400.0  std_norm=1.425
+  gen 23  pop_mean= 312.5  pop_best= 400.0  std_norm=1.398
+  gen 24  pop_mean= 309.4  pop_best= 400.0  std_norm=1.399
+  gen 25  pop_mean= 320.2  pop_best= 400.0  std_norm=1.346
+  gen 26  pop_mean= 319.5  pop_best= 400.0  std_norm=1.272
+  gen 27  pop_mean= 364.4  pop_best= 400.0  std_norm=1.202
+  gen 28  pop_mean= 357.9  pop_best= 400.0  std_norm=1.145
+  gen 29  pop_mean= 364.6  pop_best= 400.0  std_norm=1.202
+
+CEM search finished in 329.3s
+rank-4 policy, held-out seeds (20), cap 1000 steps: 896.2 steps mean
+linear-policy reference (same held-out protocol, PLAN_A_PASSED.md): 920.9 steps
+untrained random policy, same held-out seeds: 35.5 steps
