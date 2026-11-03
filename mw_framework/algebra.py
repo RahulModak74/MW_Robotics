@@ -70,11 +70,12 @@ def _mlp(dims: Sequence[int], dropout: float) -> nn.Sequential:
 
 
 class SubVAE(nn.Module):
-    """A small VAE for one sub-manifold. hidden = max(32, 4 * n_in)."""
+    """A small VAE for one sub-manifold. hidden defaults to max(32, 4 * n_in); pass `hidden` to override."""
 
-    def __init__(self, n_in: int, latent_dim: int, cond_dim: int = 0, dropout: float = 0.1):
+    def __init__(self, n_in: int, latent_dim: int, cond_dim: int = 0, dropout: float = 0.1,
+                 hidden: Optional[int] = None):
         super().__init__()
-        h = max(32, 4 * n_in)
+        h = hidden or max(32, 4 * n_in)
         self.n_in, self.latent_dim, self.cond_dim = n_in, latent_dim, cond_dim
         self.enc = _mlp([n_in + cond_dim, h, h], dropout)
         self.mu, self.sig = nn.Linear(h, latent_dim), nn.Linear(h, latent_dim)
@@ -122,7 +123,7 @@ class ManifoldAlgebra(nn.Module):
         self._pyro_name = f"mw_algebra_{id(self)}"
 
     # ── building the algebra ─────────────────────────────────────────────────
-    def _add(self, name, features, latent_dim, over):
+    def _add(self, name, features, latent_dim, over, hidden=None):
         if name in self.pieces:
             raise ValueError(f"sub-manifold '{name}' already exists")
         if over is not None and over not in self.pieces:
@@ -134,16 +135,16 @@ class ManifoldAlgebra(nn.Module):
         idx = [self.feature_names.index(f) for f in features]
         cond = self.pieces[over].latent_dim if over else 0
         self.pieces[name] = _Piece(name, list(features), latent_dim, over, idx)
-        self.vaes[name] = SubVAE(len(features), latent_dim, cond, self.dropout)
+        self.vaes[name] = SubVAE(len(features), latent_dim, cond, self.dropout, hidden)
         return self
 
-    def product(self, name: str, features: List[str], latent_dim: int):
+    def product(self, name: str, features: List[str], latent_dim: int, hidden: Optional[int] = None):
         """Independent factor:  M = ... x name"""
-        return self._add(name, features, latent_dim, None)
+        return self._add(name, features, latent_dim, None, hidden)
 
-    def fibre(self, name: str, features: List[str], latent_dim: int, over: str):
+    def fibre(self, name: str, features: List[str], latent_dim: int, over: str, hidden: Optional[int] = None):
         """Fibre over a base: the fibre's geometry depends on the base point."""
-        return self._add(name, features, latent_dim, over)
+        return self._add(name, features, latent_dim, over, hidden)
 
     def glue(self, name: str, fn: Callable[[Dict[str, torch.Tensor]], torch.Tensor],
              tolerance: float, kind: str = "normal"):

@@ -23,6 +23,8 @@ auditable.
 | `train_mw_3d.py` | **MW policy manifold** training (Pyro SVI through `MWDetector`), then held-out evaluation |
 | `mw_policy_3d.py` | `PolicyManifold3DVAE` (physics priors) and `ManifoldPolicy` (the latent query) |
 | `policy_3d.py` | features, linear policy, plain CVAE, environment factory |
+| `mw_bundle_policy.py`, `train_mw_bundle_3d.py` | The MW policy as a **fibre bundle** (`ManifoldAlgebra`): the state is the base manifold and the actions are a fibre over it, so the policy is one forward pass, with physics laws as glue maps and per-piece MW distances |
+| `compare_mw_vs_std.py`, `robustness_compare.py` | Side-by-side scoring of MW policies against plain MLP / CVAE policies, clean and under noise and pushes |
 | `eval_student.py` | Score a trained student on held-out seeds, with adjustable latent-query settings |
 | `app_3d.py`, `static_3d/` | Flask + Three.js viewer; always runs inference on CPU |
 | `checkpoints_3d/` | a trained PPO teacher (3M steps) and reports, so you can start from the data step |
@@ -55,6 +57,14 @@ runs from overwriting each other; `--features gravity` switches orientation to a
 `--ang_prior` and `--sym_prior` adding angular-speed and left/right-hip priors; each run prints a posterior and
 reconstruction check. `python eval_student.py --ckpt checkpoints_3d/<name>_mw.pth --query_steps 25 --query_lr 0.2` scores any
 trained student on the held-out seeds and lets you vary the latent-query settings without retraining.
+
+Fibre-bundle policy (state base, action fibre) — a good starting point:
+```bash
+python train_mw_3d.py --env Humanoid-v5 --teacher ppo --data_cache data_cache/ppo_humanoid.npz --epochs 1   # collects + caches teacher data
+python train_mw_bundle_3d.py --data_cache data_cache/ppo_humanoid.npz --sigma_a 0.02 --epochs 40 --name _mine
+```
+`--sigma_a` is the action-noise scale of the fibre (smaller makes the state→action map tighter); `--latent_s/--hidden_s`
+size the state base; `--no_priors` drops the physics laws for comparison.
 
 Notes for `app_3d.py`: serving is pinned to CPU by default (`MW_DEVICE=cpu`) because the per-step latent query is tiny;
 `MW_PORT`, `MW_HOST` and `MW_THREADS` are configurable; `/api3d/health` reports the device and loaded bodies; a
