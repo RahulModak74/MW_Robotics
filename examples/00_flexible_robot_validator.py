@@ -13,7 +13,7 @@ entirely plus a mistuned frequency, 1 = exact). Its error should grow as
 fidelity falls. A good validator's risk should grow with it too.
 
 SCOPE: this checks whether a GIVEN state is physical. It does not
-predict the NEXT state from the current one - see ROBOTICS.md for what a
+predict the NEXT state from the current one - see docs/ROBOTICS.md for what a
 forward-time forecaster (the Isaac-Sim-adjacent claim) would still need.
 
 Run:  python examples/00_flexible_robot_validator.py   (a few minutes on CPU, faster on GPU)
@@ -110,4 +110,4 @@ dynamics" - the laws as written don't yet penalise a physically smoother-than-tr
 trajectory. That's a specific, fixable target for the next version of these laws (e.g. a
 direct modal-content check, or a different feature set), not a dead end. Unchanged from
 example 06: this validates a GIVEN state; turning it into a forecaster that predicts the
-next state is the natural next step - see ROBOTICS.md.""")
+next state is the natural next step - see docs/ROBOTICS.md.""")

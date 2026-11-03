@@ -50,5 +50,5 @@ print("  (sensor noise in the training data is 0.01 - generated states are as ph
 
 takeaway("""The MW mechanism carries over cleanly to nonholonomic mobile-robot kinematics, with
 no changes to the core framework. See the fault table above for what a wheel-slip check catches
-on this run - an early result from a new domain, not a finished product (see ROBOTICS.md for the
+on this run - an early result from a new domain, not a finished product (see docs/ROBOTICS.md for the
 whole robotics picture).""")

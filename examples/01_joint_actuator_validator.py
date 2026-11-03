@@ -54,5 +54,5 @@ print("  (sensor noise in the training data is 0.01 - generated states are as ph
 
 takeaway("""The MW mechanism carries over cleanly to this joint, with no changes to the core
 framework. See the fault table above for what a torque/dynamics consistency check catches on
-this run - this is an early result from a new domain, not a finished product (see ROBOTICS.md
+this run - this is an early result from a new domain, not a finished product (see docs/ROBOTICS.md
 for the whole robotics picture, what's strong, and what the next iteration should target).""")

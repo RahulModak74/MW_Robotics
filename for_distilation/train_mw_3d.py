@@ -6,7 +6,7 @@ train_mw_3d.py - MW-framework training of the 3D policy manifold (Pyro SVI via M
   2. MWDetector(vae=PolicyManifold3DVAE(physics priors from the MuJoCo model)).fit(pairs)   <- Pyro ELBO + physics laws
   3. act(s) = latent query on the manifold (ManifoldPolicy); evaluate vs teacher on the SAME held-out seeds
   4. save checkpoints_3d/<env>_mw.pth + <env>_mw_report.json
-Run from full_flow_animation/ after train_policy_3d.py:
+Run from for_distilation/ after train_policy_3d.py:
     python train_mw_3d.py --env Humanoid-v5
 """
 import os, sys

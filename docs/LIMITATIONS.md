@@ -3,7 +3,7 @@
 These limits carry over from the general [MW Framework](https://github.com/RahulModak74/MW_Geometric_Intelligence)
 this repo is trimmed from. Each one was found while building that repo's seven examples
 (numbered 00, 01, 05, 06 below — those live in the parent repo, not here). This repo's own
-results, with their own mixed findings, are in [ROBOTICS.md](../ROBOTICS.md).
+results, with their own mixed findings, are in [ROBOTICS.md](ROBOTICS.md).
 
 **1. Physics rules don't always beat a plain model.**
 With clean, plentiful data and simple physics, a plain model does just as well (examples 01

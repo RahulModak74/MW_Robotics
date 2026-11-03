@@ -29,5 +29,5 @@ references:
     doi: 10.5281/zenodo.22954118
     notes: >
       Describes the forward-only-time-axis / causal-cone architecture that would close the
-      validator-vs-forecaster gap noted in this repo's ROBOTICS.md. Not yet applied to
-      robotics in the paper or here; see ROBOTICS.md's "Related theory" section.
+      validator-vs-forecaster gap noted in this repo's docs/ROBOTICS.md. Not yet applied to
+      robotics in the paper or here; see docs/ROBOTICS.md's "Related theory" section.

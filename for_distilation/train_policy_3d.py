@@ -9,7 +9,7 @@ compress it into a CVAE (the "VAE as policy" object from domain/EXP_03.md).
   3. Train a CVAE on the pairs, evaluate it against the teacher on the SAME seeds
   4. Save checkpoints_3d/<env>_{theta.npy,cvae.pt,report.json}
 
-Run from full_flow_animation/:
+Run from for_distilation/:
     python train_policy_3d.py --env Humanoid-v5 --pop 240 --gens 60
     python train_policy_3d.py --env Ant-v5      --pop 120 --gens 40
 """
