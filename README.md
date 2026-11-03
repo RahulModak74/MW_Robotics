@@ -75,5 +75,6 @@ old_content/             earlier specs, plans and the 2D demo, kept for referenc
 ## Join in
 
 Reproductions, new robot examples and your own results are very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Picking this up on another machine, or with an AI agent? Start with **[NEXT_STEP_03nov.md](NEXT_STEP_03nov.md)** — current state, exact commands to reproduce, and the next experiments.
 
 *Research code, not a finished robot and not a safety system. Apache-2.0 (see `LICENSE`); please cite `CITATION.cff`.*

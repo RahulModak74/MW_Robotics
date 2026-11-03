@@ -35,6 +35,19 @@ def _load(kind_path):
         ck = torch.load(path, map_location="cpu")
         m = CVAE(ck["fdim"], ck["adim"], hidden=ck["hidden"]); m.load_state_dict(ck["state"]); m.eval()
         return lambda f: HI * m.act(torch.as_tensor(f[None], dtype=torch.float32)).numpy()[0]
+    if kind.startswith("ppo"):
+        from stable_baselines3 import PPO
+        from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+        base = path[:-4] if path.endswith(".zip") else path
+        ve = VecNormalize.load(base + "_vecnorm.pkl", DummyVecEnv([lambda: make_env("Humanoid-v5")]))
+        ve.training = False; ve.norm_reward = False
+        model = PPO.load(base, device="cpu")
+        return ("needs_obs", lambda obs: np.clip(model.predict(ve.normalize_obs(obs[None]), deterministic=True)[0][0], -HI, HI))
+    if kind.startswith("mwflat"):
+        from mw_framework import MWDetector
+        from mw_policy_3d import ManifoldPolicy
+        pol = ManifoldPolicy(MWDetector.load(path))
+        return lambda f: pol.act(f)
     from mw_bundle_policy import BundlePolicy
     p = BundlePolicy.load(path)
     return p.act
@@ -45,16 +58,19 @@ def _run(args):
     torch.set_num_threads(1)
     noise, push = CONDITIONS[cond]
     act = _load((kind, path))
-    env = make_env("Humanoid-v5"); env.reset(seed=seed); d = env.unwrapped.data
+    needs_obs = isinstance(act, tuple)
+    if needs_obs:
+        act = act[1]
+    env = make_env("Humanoid-v5"); obs, _ = env.reset(seed=seed); d = env.unwrapped.data
     rng = np.random.default_rng(seed)
     n = 0
     for t in range(max_steps):
-        a = act(features(d))
+        a = act(obs if needs_obs else features(d))
         if noise:
             a = np.clip(a + noise * HI * rng.standard_normal(a.shape), -HI, HI)
         if push and t == 60:
             d.qvel[0:3] += np.array([0.0, push, 0.0])
-        _, _, term, trunc, _ = env.step(a); n += 1
+        obs, _, term, trunc, _ = env.step(a); n += 1
         if term or trunc:
             break
     return n
@@ -63,11 +79,13 @@ def _run(args):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--policy", action="append", required=True, help="name=path (MLP / CVAE / bundle checkpoint)")
-    ap.add_argument("--n", type=int, default=30); ap.add_argument("--workers", type=int, default=10)
+    ap.add_argument("--n", type=int, default=30); ap.add_argument("--cap", type=int, default=500); ap.add_argument("--conditions", default="all"); ap.add_argument("--workers", type=int, default=10)
     ap.add_argument("--out", default="logs_3d/robustness_compare.json")
     a = ap.parse_args()
     pols = [p.split("=", 1) for p in a.policy]
-    jobs = [(k, pth, c, s, 500) for k, pth in pols for c in CONDITIONS for s in range(5000, 5000 + a.n)]
+    if a.conditions != "all":
+        CONDITIONS = {c: CONDITIONS[c] for c in a.conditions.split(",")}
+    jobs = [(k, pth, c, s, a.cap) for k, pth in pols for c in CONDITIONS for s in range(5000, 5000 + a.n)]
     t0 = time.time()
     with mp.get_context("spawn").Pool(a.workers, initializer=_cpu_only) as pool:
         res = pool.map(_run, jobs, chunksize=4)
@@ -76,10 +94,10 @@ if __name__ == "__main__":
         table[k] = {}
         for c in CONDITIONS:
             v = res[i:i + a.n]; i += a.n
-            table[k][c] = {"steps": float(np.mean(v)), "reach_cap": float(np.mean([x >= 500 for x in v]))}
+            table[k][c] = {"steps": float(np.mean(v)), "reach_cap": float(np.mean([x >= a.cap for x in v]))}
     hdr = f"{'policy':22s}" + "".join(f"{c:>14s}" for c in CONDITIONS)
     print(hdr); print("-" * len(hdr))
     for k, _ in pols:
         print(f"{k:22s}" + "".join(f"{table[k][c]['steps']:8.0f} ({table[k][c]['reach_cap']*100:3.0f}%)" for c in CONDITIONS))
-    print(f"(mean steps, share of episodes reaching the 500-step cap; {a.n} seeds per cell; {time.time()-t0:.0f}s)")
+    print(f"(mean steps, share of episodes reaching the cap of {a.cap}; {a.n} seeds per cell; {time.time()-t0:.0f}s)")
     json.dump({"table": table, "n": a.n}, open(a.out, "w"), indent=1)
