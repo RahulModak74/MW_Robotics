@@ -23,6 +23,7 @@ auditable.
 | `train_mw_3d.py` | **MW policy manifold** training (Pyro SVI through `MWDetector`), then held-out evaluation |
 | `mw_policy_3d.py` | `PolicyManifold3DVAE` (physics priors) and `ManifoldPolicy` (the latent query) |
 | `policy_3d.py` | features, linear policy, plain CVAE, environment factory |
+| `eval_student.py` | Score a trained student on held-out seeds, with adjustable latent-query settings |
 | `app_3d.py`, `static_3d/` | Flask + Three.js viewer; always runs inference on CPU |
 | `checkpoints_3d/` | a trained PPO teacher (3M steps) and reports, so you can start from the data step |
 | `docs/NEW_APPROACH.md` | notes on taking the teacher further (longer training, entropy bonus, LR schedule, reward shaping) |
@@ -47,6 +48,13 @@ python app_3d.py
 Useful knobs for `train_mw_3d.py`: `--latent`, `--hidden`, `--epochs`, `--rows` (subsample the teacher data),
 `--workers` (CPU processes for MuJoCo rollouts), `--n_eval` (held-out seeds). Device selection is the framework's own
 (`mw_framework.core.get_device`); force it with `MW_DEVICE=cpu` or `MW_DEVICE=cuda`.
+
+Tools for experimenting with the student (all optional; defaults are unchanged):
+`--data_cache data_cache/ppo_humanoid.npz` collects the teacher data once and reuses it across runs; `--name _tag` keeps
+runs from overwriting each other; `--features gravity` switches orientation to a gravity vector in the torso frame, with
+`--ang_prior` and `--sym_prior` adding angular-speed and left/right-hip priors; each run prints a posterior and
+reconstruction check. `python eval_student.py --ckpt checkpoints_3d/<name>_mw.pth --query_steps 25 --query_lr 0.2` scores any
+trained student on the held-out seeds and lets you vary the latent-query settings without retraining.
 
 Notes for `app_3d.py`: serving is pinned to CPU by default (`MW_DEVICE=cpu`) because the per-step latent query is tiny;
 `MW_PORT`, `MW_HOST` and `MW_THREADS` are configurable; `/api3d/health` reports the device and loaded bodies; a

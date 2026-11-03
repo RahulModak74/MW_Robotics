@@ -18,12 +18,40 @@ def make_env(name="Humanoid-v5", **kw):
 
 
 def features(data):
+    """'legacy' features: qpos[2:] (height, raw quaternion, joints) + qvel."""
     return np.concatenate([data.qpos[2:], data.qvel]).astype(np.float64)
 
 
-def feat_dim(env):
+_DOWN = np.array([0.0, 0.0, -1.0])
+
+
+def features_gravity(data, body=1):
+    """'gravity' features: orientation as the gravity direction in the torso frame instead of a raw quaternion.
+
+    q and -q are the same rotation, so a raw quaternion is a two-to-one, discontinuous coordinate; the gravity vector is a
+    smooth single-valued function of orientation. Layout (3+3+3+1+nu+nu dims; 44 for Humanoid-v5):
+        0:3 gravity in torso frame | 3:6 angular velocity (torso frame) | 6:9 linear velocity (torso frame)
+        9 torso height | 10:10+nu joint angles | 10+nu: joint velocities
+    `body=1` is the torso (body 0 is the world). A free joint's angular qvel is already in the body frame, so it is used as is.
+    """
+    R = data.xmat[body].reshape(3, 3)
+    return np.concatenate([R.T @ _DOWN, data.qvel[3:6], R.T @ data.qvel[0:3], [data.qpos[2]],
+                           data.qpos[7:], data.qvel[6:]]).astype(np.float64)
+
+
+FEATURES = {"legacy": features, "gravity": features_gravity}
+
+
+def get_features(name="legacy"):
+    try:
+        return FEATURES[name]
+    except KeyError:
+        raise ValueError(f"unknown feature set {name!r}; choose from {sorted(FEATURES)}") from None
+
+
+def feat_dim(env, name="legacy"):
     d = env.unwrapped.data
-    return len(features(d))
+    return len(get_features(name)(d))
 
 
 class LinearPolicy:

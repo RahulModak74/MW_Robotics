@@ -18,3 +18,6 @@ data/
 # imports it optionally and degrades cleanly without it
 mw_agentic/
 old_content/full_flow_2d_demo/checkpoints/
+
+# cached teacher (s,a) data for student experiments
+for_distilation/data_cache/

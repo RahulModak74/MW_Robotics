@@ -135,7 +135,7 @@ def run_rollout(tag, mode, steps, seed, noise, push):
     for t in range(steps):
         f = features(data)
         if mode == "mw_manifold":
-            a = mwpol.act(f)
+            a = mwpol.act(mwpol.observe(data))        # each manifold knows which state layout it was trained on
         elif mode == "ppo_teacher":
             a = b["ppo"].act(obs, b["hi"])
         elif mode == "teacher":
@@ -185,7 +185,9 @@ def health():
 
 @app.route("/api3d/model")
 def model_info():
-    tag = request.args.get("body", "humanoid")
+    tag = request.args.get("body") or next(iter(BODIES))
+    if tag not in BODIES:
+        return jsonify({"error": f"body {tag!r} not trained; available: {list(BODIES)}"}), 404
     env = make_env(BODIES[tag]["env"]); env.reset(seed=0)
     g = _geoms(env.unwrapped.model); env.close()
     return jsonify({"geoms": g})
@@ -194,7 +196,7 @@ def model_info():
 @app.route("/api3d/rollout", methods=["POST"])
 def rollout():
     b = request.get_json(silent=True) or {}
-    tag = b.get("body", "humanoid")
+    tag = b.get("body") or next(iter(BODIES))          # default: the first trained body
     if tag not in BODIES:
         return jsonify({"error": f"body {tag!r} not trained; available: {list(BODIES)}"}), 404
     try:
