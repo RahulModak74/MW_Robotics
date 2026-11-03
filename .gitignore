@@ -14,7 +14,7 @@ data/
 *.pth
 
 # mw_agentic: the agentic choreography layer is kept out of this public
-# repo entirely (not just its learning state) - full_flow_animation/app.py
+# repo entirely (not just its learning state) - old_content/full_flow_2d_demo/app.py
 # imports it optionally and degrades cleanly without it
 mw_agentic/
-full_flow_animation/checkpoints/
+old_content/full_flow_2d_demo/checkpoints/

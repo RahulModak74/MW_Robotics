@@ -1,8 +1,8 @@
 # mw_to_protomotions
 
-A real, tested attempt at the 7-stage plan in `../path_to_full_Robotics.md` — from this
-repo's current state to ProtoMotions-scale robotics. **Not committed to git** until the
-owner reviews it. Everything here uses MuJoCo's Walker2d (6 joints, 2 legs) as the coupled
+The first real, tested pass through the 7-stage plan (now archived at
+`../../old_content/specs_and_plans/path_to_full_Robotics.md`; the current plan is `../../ROADMAP.md`) — from this
+repo's earlier state towards ProtoMotions-scale robotics. Everything here uses MuJoCo's Walker2d (6 joints, 2 legs) as the coupled
 body, plus one stretch test on the full Humanoid-v5 (17 joints, true 3D).
 
 **Start here: [STATUS.md](STATUS.md)** — a "read this first" five-minute summary at the top,
