@@ -158,3 +158,69 @@ When you get to Stage 5 (MoCap), do not try to cram walking, running, and recove
 `z_total = [z_balance (3D), z_gait_phase (2D), z_skill_intent (3D)]`
 
 This mathematical decomposition is what will allow your CPU-native VAE to punch far above its weight class and genuinely rival NVIDIA's skill library without needing their compute.
+
+
+---
+
+## Addendum A: What the GPU Hog Actually Is (and Why the Policy Is the Answer)
+
+The pip-installable MuJoCo/MJX substrate is now table stakes — DeepMind's MuJoCo Playground and MJX already run on consumer GPUs. That is not the MW value-add. **The value-add is the policy layer, and to defend it we must be precise about why every existing humanoid stack is a GPU furnace.**
+
+The GPU is not hogged by the neural network — a locomotion policy is tiny. It is hogged by **sample count**. Reference numbers from the current stack:
+
+- Isaac Lab PPO, Unitree H1 rough terrain: **~147M environment steps** in ~64 min on an L40S at 4096 parallel envs.
+- Typical locomotion run: **~1B PPO steps** completes in under four hours on that hardware; "overnight or multi-day" on CPU-only simulators.
+- ProtoMotions general motion tracker: **24 A100 GPUs** over ~142K retargeted motions.
+- A100 MJX Humanoid PPO throughput: **~91K steps/sec**.
+- A single running skill: **~72M timesteps** to reach prior best speed.
+
+PPO is on-policy: it discards each batch after one update, so it needs billions of steps, which needs thousands of parallel sims, which needs an A100/L40S-class card. **The furnace design, not the network, is the cost.**
+
+The MW policy attacks the furnace on three axes:
+
+1. **ELBO replaces reward-shaped rollout as the primary gradient source.** Joint limits, ZMP, torque limits, and symmetry become *terms in the loss*, not emergent properties the network must discover. This is why the claim is thousands of `(s,a)` pairs, not billions of steps.
+2. **Physics priors prune the search space before training.** PPO explores a 20+ DoF continuous action space essentially blind — the first ~5M timesteps of standard humanoid training are "predominantly bad samples" that fall over. The MW manifold excludes invalid torques, invalid ZMP states, and asymmetric gaits *before* the first gradient step.
+3. **Uncertainty is an output, not an afterthought.** A PPO policy cannot report when it is off-manifold. The MW VAE reports distance-from-training-manifold per step, which is what makes the classical fallback contract auditable.
+
+**The one-sentence reframe (use externally):**
+> *"Everyone else makes humanoid policies by throwing a billion simulation steps at a GPU until physics emerges. MW makes the policy by putting physics into the objective — thousands of samples on a CPU, plus a per-step uncertainty signal no PPO policy provides."*
+
+**Honest throughput gap (put in any README that compares to Isaac):** Isaac Lab on a 4090 ≈ 4096 envs; MJX on a 4060 ≈ 512–1024 envs; net **~4–10x slower wall-clock** for the same PPO budget. "Train a walking G1 overnight on your laptop" is true. "Match a frontier lab's iteration speed" is not.
+
+## Addendum B: Step 2 Precision — Where Reward Enters the ELBO
+
+The current Step 2 text says SVI "maximizes a sparse reward subject to physics priors." SVI optimizes `E_q[log p(x|z)] − KL(q‖p)` — a *generative* objective over data. A policy needs `E_π[R(τ)]`. Physics priors shape the prior and constrain the latent, but they do not supply a gradient that says "move forward." Sparse forward reward is not differentiable through MuJoCo. Step 2 must commit to one of three mechanisms:
+
+1. **Reparameterized rollouts through a learned differentiable dynamics model.** Train a CPU-friendly world model on Step 1 data or cheap random rollouts; backprop reward through it. The VAE *is* the world model and the policy is amortized inference over it. Most mathematically honest version of "SVI as primary learner."
+2. **Score-function / variational policy gradient.** Sample from the decoder, estimate `∇log π(a|s)·R` with a baseline. Works — but this is REINFORCE-with-a-VAE-policy, and the claim becomes "fewer samples because priors prune the action space," not "no RL machinery."
+3. **Amortized inference + self-improvement.** Fit `q(z|s)` on Step 1 data, then Step 3 DAgger with uncertainty-gated queries. Most likely what actually ships.
+
+**Revised Step 2 claim (internal north star stays ambitious; external doc must use this):** *"GPU optional for a seed corpus; CPU for all training and deployment."* Not "zero GPU from training to deployment." That version survives the first hard experiment.
+
+## Addendum C: The Falsification Test That Gates Step 2
+
+Do not scale DoF until this passes. **Planar hopper or 2-DoF biped, sparse forward reward, CPU-native SVI, no teacher, no reward shaping.** If it learns to stand and hop, Step 2 is real. If it collapses to a standing policy or requires dense shaping, the boundary has been found cheaply. Report the result either way — a clean negative on a 2-DoF body is worth more than an ambiguous positive on Humanoid-v5.
+
+## Addendum D: Fibre-Bundle Training Risks (Not Just Representation)
+
+`z_total = [z_balance (3D), z_gait_phase (2D), z_skill_intent (3D)]` is the correct decomposition, but two training-time failure modes will collapse it back into a flat latent if unaddressed:
+
+- **Cross-fibre KL leakage.** With a shared decoder, the KL term lets one fibre encode another's information. Mitigation: per-fibre KL weights or an information-bottleneck constraint. Prove stability on two fibres (`z_balance` + `z_gait_phase`) across walk/run *before* adding `z_skill_intent`.
+- **Fibre imbalance.** Walk data will dominate dance/parkour by orders of magnitude. Without per-fibre balanced sampling or a mixture-of-experts decoder, rare fibres mode-average anyway. `ManifoldAlgebra` needs a training-time balancing policy, not only a representational one.
+
+## Addendum E: Open-Source Strategy and the Moat
+
+The decision to port `g1_raceengine` and open-source it is correct, but it is a **commoditize-the-complement** play, not a product. Code is no longer the moat.
+
+**Sequence:**
+1. **License audit of ProtoMotions first — one hour, non-negotiable.** If Apache 2.0, clean port with attribution. If NVIDIA Source Code License or any field-of-use restriction, open-sourcing a derivative is a legal problem and defense buyers will flag it in diligence. This gate determines the entire plan.
+2. Step 1 working end-to-end on an RTX 4060-class card, reproducible script, demo video.
+3. Port `g1_raceengine` as a **distro, not a hard fork** — minimal diff, documented patches, clear upstream tracking. Budget a part-time maintainer; a code dump without support is dead in a month.
+4. Ship three open artifacts: MJX-native G1 race engine (`pip install` + video); reproducible locomotion baseline (walk/run/push-recover with published curves) so MW-VAE policies can be compared against PPO on the same substrate; and an open **uncertainty/fallback interface spec** — `predict → (action, uncertainty, fallback_flag)` — that any policy can implement. If that spec gets adopted, you have defined a standard, which is a deeper moat than code.
+
+**Keep proprietary:** the fibre-bundle hierarchical VAE, the physics-prior ELBO, the uncertainty/certification layer, and the MoCap retargeting pipeline.
+
+**External claim to put on the README:**
+> *"Reproduce state-of-the-art humanoid locomotion research and build G1 demos on a consumer laptop — pip-installable, MuJoCo-native, no Omniverse, no enterprise GPU — with a physics-constrained policy layer that also deploys to a $500 CPU."*
+
+Everything else — "near-Isaac," "zero GPU," "immediate hardware deployment" — is a roadmap item, not a headline. The substrate is open; the policy is the moat.

@@ -71,7 +71,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--env", default="Humanoid-v5"); ap.add_argument("--epochs", type=int, default=150)
     ap.add_argument("--max_steps", type=int, default=500); ap.add_argument("--workers", type=int, default=11)
-    ap.add_argument("--teacher", default="cem", choices=["cem", "ppo"]); ap.add_argument("--latent", type=int, default=8); ap.add_argument("--n_eval", type=int, default=10)
+    ap.add_argument("--teacher", default="cem", choices=["cem", "ppo"]); ap.add_argument("--latent", type=int, default=8); ap.add_argument("--hidden", type=int, default=128); ap.add_argument("--rows", type=int, default=0); ap.add_argument("--n_eval", type=int, default=10)
     a = ap.parse_args(); det_env[0] = a.env
     tag = a.env.split("-")[0].lower()
     theta = np.load(os.path.join(tp.CK, f"{tag}_theta.npy")) if a.teacher == "cem" else None
@@ -95,6 +95,8 @@ if __name__ == "__main__":
     A = np.array([x for d in data for x in d[1]], dtype=np.float32) * spec["hi"]      # physical torques
     names = [f"s{i}" for i in range(spec["s_dim"])] + [f"a{i}" for i in range(spec["a_dim"])]
     df = pd.DataFrame(np.concatenate([S, A], 1), columns=names)
+    if a.rows and a.rows < len(df):
+        df = df.sample(a.rows, random_state=0).reset_index(drop=True)
     print(f"collected {len(df)} (s,a) rows", flush=True)
 
     from mw_framework.core import get_device
@@ -103,7 +105,7 @@ if __name__ == "__main__":
     if dev.type == "cpu":
         torch.set_num_threads(a.workers)
     t0 = time.time()
-    vae = PolicyManifold3DVAE(latent_dim=a.latent, **spec)
+    vae = PolicyManifold3DVAE(latent_dim=a.latent, hidden_dim=a.hidden, **spec)
     det = MWDetector(vae=vae, epochs=a.epochs, lr=1e-3, batch_size=512, verbose=True).fit(df)
     path = os.path.join(tp.CK, f"{tag}_mw.pth"); det.save(path)
     print(f"MWDetector (Pyro SVI) trained in {time.time()-t0:.0f}s -> {path}", flush=True)

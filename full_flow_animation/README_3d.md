@@ -40,7 +40,7 @@ python train_policy_3d.py --env Humanoid-v5 --pop 240 --gens 60      # CEM teach
 python train_ppo_teacher_3d.py --env Humanoid-v5 --timesteps 10000000 --envs 11   # PPO teacher (see timing below)
 python train_mw_3d.py --env Humanoid-v5 --teacher ppo                # MW manifold on PPO data   -> humanoid_ppo_mw.pth
 python train_mw_3d.py --env Humanoid-v5                              # MW manifold on CEM data   -> humanoid_mw.pth
-python app_3d.py                                                     # http://127.0.0.1:5051
+python app_3d.py                                                     # http://127.0.0.1:5052
 ```
 
 `train_mw_3d.py` prints `MW VAE (Pyro SVI) training on: cuda|cpu`. Device selection is the framework's own
@@ -72,16 +72,23 @@ agent session does not have.) Until then everything runs on CPU.
 |---|---|---|---|
 | CEM teacher (linear, 770 params) | 89.4 | 0.69 m | measured; matches the documented 3D wall (58–113 steps) |
 | Plain-PyTorch CVAE on CEM data | 91.7 | 0.70 m | measured; faithfully copies a weak teacher |
-| PPO teacher | _pending_ | | training in progress |
-| MW manifold on PPO data | _pending_ | | |
+| **PPO teacher** (3M steps, ~50 min CPU) | **577.8** (20 seeds) | **8.30 m** | measured; training-time episodes averaged ~540-580 steps |
+| MW manifold on PPO data (latent 8, hidden 128, 20 epochs, CPU) | 42.8 | 0.40 m | measured; **fails to reproduce the teacher** (see below) |
+
+**Diagnosis of the MW-manifold result (measured, 2000 held-out PPO rows).** The manifold is under-fitted, not the data:
+reconstruction error with the true (s, a) is 0.45 (state) / 0.16 (action) of the data variance, and the latent-query action
+error vs the teacher is 0.73 (predicting zero torque scores 1.07). With latent 8, hidden 128 and only 20 SVI epochs
+(190 s/epoch on CPU, 353k rows) the manifold is too lossy to balance. The PPO teacher itself is good, so the open
+question is whether a bigger/longer-trained MW manifold can match it. **Next run (best done on a GPU):**
+`python train_mw_3d.py --env Humanoid-v5 --teacher ppo --latent 32 --hidden 256 --epochs 100` (use `--rows 100000` to
+subsample). Not yet tried; no claim is made about its outcome.
 
 The pitch-table figures in `NEW_POLICY_CPU_GPU.md` (850 / 750 / 870 steps, "beats teacher after DAgger") are
-**projections, not measurements** — nothing here supports them yet. The PPO claim of "800+ steps in about an hour" is
-likewise unverified: the CEM numbers above are the only measured Humanoid-v5 results so far.
+**projections, not measurements** — nothing here supports them yet. PPO reached ~578 held-out steps after 3M steps (~50 min on 11 CPU cores), short of "800+" so far; it was stopped there and can be resumed.
 
 ## Honest scope
 
 - A distilled policy can only be as good as its teacher; a manifold trained on 90-step data balances for ~90 steps.
 - MW priors constrain *what states/torques are physically admissible*, which is not the same as *balancing*. Whether they
-  let the student exceed the teacher (the DAgger idea in `NEW_POLICY_CPU_GPU.md`) is untested.
+  let the student exceed the teacher (the DAgger idea in `NEW_POLICY_CPU_GPU.md`) is untested; today the MW student is *worse* than its teacher.
 - Not a safety system; do not use to control a real robot.

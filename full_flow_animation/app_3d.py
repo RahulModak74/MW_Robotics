@@ -10,7 +10,7 @@ MuJoCo geom, frame by frame. Nothing is hand-animated.
 Run:
     python train_policy_3d.py --env Humanoid-v5     # CEM teacher + plain-CVAE baseline
     python train_mw_3d.py --env Humanoid-v5         # MW manifold (Pyro) - what the app serves
-    python app_3d.py                                 # then open http://127.0.0.1:5051
+    python app_3d.py                                 # then open http://127.0.0.1:5052
 
 HONEST SCOPE: see README_3d.md. A policy is only as good as its teacher; on Humanoid-v5 that teacher is the
 documented CPU "3D balance wall" (domain/29DoF/PROGRESS_LOG.md) - the report numbers are shown in the UI as-is.
@@ -145,4 +145,4 @@ def rollout():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5051, debug=False)
+    app.run(host="127.0.0.1", port=5052, debug=False)
