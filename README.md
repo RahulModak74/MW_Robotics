@@ -29,7 +29,7 @@ Many teams in the Global South already own a consumer GPU. So we get there in tw
 
 | Step | What it is | Status |
 |---|---|---|
-| **Step 1 — consumer-GPU support** [`for_distilation/`](for_distilation/) | Use the card you already have (an RTX 4060-class is plenty) to train a standard RL teacher, and distill it into an MW policy that **runs on a plain CPU**. Useful today. | Teacher working, student in development |
+| **Step 1 — consumer-GPU support** [`for_distilation/`](for_distilation/) | Use the card you already have (an RTX 4060-class is plenty) to train a standard RL teacher, and distill it into an MW policy that **runs on a plain CPU**. Useful today. | Teacher and student  working|
 | **Step 2 — full replacement** [`for_full_replacement/`](for_full_replacement/) | Drop the teacher and the GPU entirely: the MW model learns the policy directly on CPU. **This is the end goal.** | In progress |
 
 The plan, stage by stage: **[ROADMAP.md](ROADMAP.md)**. Next steps for the Step 1 student:
