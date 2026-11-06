@@ -1,0 +1,8 @@
+data_pm/
+eval_prob/
+students/*.pt
+kimodo_data/csv/
+kimodo_data/emb/
+kimodo_data/m500/
+kimodo_data/quick100/
+__pycache__/

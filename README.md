@@ -37,6 +37,10 @@ The plan, stage by stage: **[ROADMAP.md](ROADMAP.md)**. Next steps for the Step 
 
 ## What already works (all on CPU)
 
+- **NEW (Diwali 2026): an MW student dances.** Distilled from NVIDIA ProtoMotions' Unitree G1 tracker with 500 generated
+  motions (no dance among them), the 1.6 M-parameter MW student danced an unseen clip 7/7 times, including under heavy noise,
+  where plain and Bayesian students fell; its uncertainty warns before a fall (AUROC 0.996). Video and tables:
+  [for_distilation/protomotions_g1/](for_distilation/protomotions_g1/README.md).
 - **Six physics domains** with validators — beam, motor joint, planar arm, wheeled robot, hopping leg, motor heat
   ([docs/ROBOTICS.md](docs/ROBOTICS.md)).
 - **Forecasting** the next state faster than re-simulating, checked against MuJoCo
@@ -68,6 +72,7 @@ still runs on CPU. Then continue in [for_distilation/](for_distilation/README.md
 mw_framework/            MW core library (physics-constrained Bayesian VAE, Pyro SVI)
 examples/  tests/  mujoco_experiments/  docs/
 for_distilation/         Step 1: consumer-GPU teacher -> CPU policy, plus a 3D demo viewer
+  protomotions_g1/       MW student of NVIDIA's G1 tracker: the dance test (results, video, code)
 for_full_replacement/    Step 2: CPU-native policy learning
 old_content/             earlier specs, plans and the 2D demo, kept for reference
 ```

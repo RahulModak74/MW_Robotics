@@ -1,0 +1,1877 @@
+[
+{
+"id": "exercise_041",
+"cat": "exercise",
+"text": "A person kicks forward with the left leg slowly."
+},
+{
+"id": "locomotion_002",
+"cat": "locomotion",
+"text": "A person walks forward carefully."
+},
+{
+"id": "locomotion_040",
+"cat": "locomotion",
+"text": "A person walks in a circle."
+},
+{
+"id": "everyday_019",
+"cat": "everyday",
+"text": "A person checks a wristwatch and then stands still."
+},
+{
+"id": "locomotion_054",
+"cat": "locomotion",
+"text": "A person walks forward and turns right confidently."
+},
+{
+"id": "exercise_009",
+"cat": "exercise",
+"text": "A person does squats with energy."
+},
+{
+"id": "exercise_022",
+"cat": "exercise",
+"text": "A person stretches the arms overhead quickly."
+},
+{
+"id": "dance_038",
+"cat": "dance",
+"text": "A person does a salsa step with big movements."
+},
+{
+"id": "gesture_071",
+"cat": "gesture",
+"text": "A person gives a high five while standing still."
+},
+{
+"id": "gesture_020",
+"cat": "gesture",
+"text": "A person salutes."
+},
+{
+"id": "exercise_058",
+"cat": "exercise",
+"text": "A person twists the torso left and right three times."
+},
+{
+"id": "gesture_058",
+"cat": "gesture",
+"text": "A person points to the left while walking slowly."
+},
+{
+"id": "gesture_067",
+"cat": "gesture",
+"text": "A person covers the face with the hands enthusiastically."
+},
+{
+"id": "locomotion_062",
+"cat": "locomotion",
+"text": "A person tiptoes forward carefully."
+},
+{
+"id": "locomotion_007",
+"cat": "locomotion",
+"text": "A person walks slowly forward carefully."
+},
+{
+"id": "exercise_063",
+"cat": "exercise",
+"text": "A person does calf raises three times."
+},
+{
+"id": "exercise_001",
+"cat": "exercise",
+"text": "A person does jumping jacks slowly."
+},
+{
+"id": "everyday_020",
+"cat": "everyday",
+"text": "A person stretches after waking up."
+},
+{
+"id": "locomotion_070",
+"cat": "locomotion",
+"text": "A person walks forward and stops."
+},
+{
+"id": "everyday_035",
+"cat": "everyday",
+"text": "A person throws a ball."
+},
+{
+"id": "locomotion_014",
+"cat": "locomotion",
+"text": "A person walks quickly forward confidently."
+},
+{
+"id": "everyday_015",
+"cat": "everyday",
+"text": "A person checks a wristwatch."
+},
+{
+"id": "everyday_052",
+"cat": "everyday",
+"text": "A person carries a box while stepping forward."
+},
+{
+"id": "everyday_040",
+"cat": "everyday",
+"text": "A person catches a ball."
+},
+{
+"id": "everyday_068",
+"cat": "everyday",
+"text": "A person waits impatiently carefully."
+},
+{
+"id": "dance_023",
+"cat": "dance",
+"text": "A person sways to music with big movements."
+},
+{
+"id": "locomotion_004",
+"cat": "locomotion",
+"text": "A person walks forward confidently."
+},
+{
+"id": "exercise_019",
+"cat": "exercise",
+"text": "A person does arm circles with energy."
+},
+{
+"id": "everyday_045",
+"cat": "everyday",
+"text": "A person sweeps the floor."
+},
+{
+"id": "gesture_033",
+"cat": "gesture",
+"text": "A person beckons someone to come closer while walking slowly."
+},
+{
+"id": "dance_026",
+"cat": "dance",
+"text": "A person does a twirl happily."
+},
+{
+"id": "dance_074",
+"cat": "dance",
+"text": "A person does a celebration dance in place."
+},
+{
+"id": "gesture_023",
+"cat": "gesture",
+"text": "A person salutes while walking slowly."
+},
+{
+"id": "everyday_033",
+"cat": "everyday",
+"text": "A person pulls a rope carefully."
+},
+{
+"id": "dance_037",
+"cat": "dance",
+"text": "A person does a salsa step slowly."
+},
+{
+"id": "gesture_000",
+"cat": "gesture",
+"text": "A person waves with the right hand."
+},
+{
+"id": "everyday_059",
+"cat": "everyday",
+"text": "A person opens a door and then stands still."
+},
+{
+"id": "locomotion_034",
+"cat": "locomotion",
+"text": "A person sidesteps to the right confidently."
+},
+{
+"id": "gesture_043",
+"cat": "gesture",
+"text": "A person crosses the arms while walking slowly."
+},
+{
+"id": "dance_071",
+"cat": "dance",
+"text": "A person does a celebration dance happily."
+},
+{
+"id": "exercise_051",
+"cat": "exercise",
+"text": "A person does high knees in place slowly."
+},
+{
+"id": "dance_062",
+"cat": "dance",
+"text": "A person does a slow dance slowly."
+},
+{
+"id": "everyday_000",
+"cat": "everyday",
+"text": "A person picks something up from the floor."
+},
+{
+"id": "locomotion_065",
+"cat": "locomotion",
+"text": "A person walks forward with long strides."
+},
+{
+"id": "locomotion_056",
+"cat": "locomotion",
+"text": "A person marches in place while swinging the arms."
+},
+{
+"id": "locomotion_069",
+"cat": "locomotion",
+"text": "A person walks forward with long strides confidently."
+},
+{
+"id": "locomotion_058",
+"cat": "locomotion",
+"text": "A person marches in place with a relaxed posture."
+},
+{
+"id": "gesture_024",
+"cat": "gesture",
+"text": "A person salutes twice."
+},
+{
+"id": "locomotion_012",
+"cat": "locomotion",
+"text": "A person walks quickly forward carefully."
+},
+{
+"id": "locomotion_027",
+"cat": "locomotion",
+"text": "A person sidesteps to the left carefully."
+},
+{
+"id": "gesture_045",
+"cat": "gesture",
+"text": "A person raises both arms above the head."
+},
+{
+"id": "everyday_053",
+"cat": "everyday",
+"text": "A person carries a box carefully."
+},
+{
+"id": "everyday_036",
+"cat": "everyday",
+"text": "A person throws a ball slowly."
+},
+{
+"id": "gesture_066",
+"cat": "gesture",
+"text": "A person covers the face with the hands while standing still."
+},
+{
+"id": "gesture_074",
+"cat": "gesture",
+"text": "A person gives a high five twice."
+},
+{
+"id": "exercise_021",
+"cat": "exercise",
+"text": "A person stretches the arms overhead slowly."
+},
+{
+"id": "dance_034",
+"cat": "dance",
+"text": "A person dances side to side in place."
+},
+{
+"id": "gesture_015",
+"cat": "gesture",
+"text": "A person claps the hands."
+},
+{
+"id": "exercise_070",
+"cat": "exercise",
+"text": "A person shadow boxes."
+},
+{
+"id": "locomotion_008",
+"cat": "locomotion",
+"text": "A person walks slowly forward with a relaxed posture."
+},
+{
+"id": "gesture_005",
+"cat": "gesture",
+"text": "A person waves with both hands."
+},
+{
+"id": "dance_040",
+"cat": "dance",
+"text": "A person dances and claps."
+},
+{
+"id": "locomotion_009",
+"cat": "locomotion",
+"text": "A person walks slowly forward confidently."
+},
+{
+"id": "exercise_002",
+"cat": "exercise",
+"text": "A person does jumping jacks quickly."
+},
+{
+"id": "everyday_042",
+"cat": "everyday",
+"text": "A person catches a ball while stepping forward."
+},
+{
+"id": "exercise_057",
+"cat": "exercise",
+"text": "A person twists the torso left and right quickly."
+},
+{
+"id": "locomotion_074",
+"cat": "locomotion",
+"text": "A person walks forward and stops confidently."
+},
+{
+"id": "dance_061",
+"cat": "dance",
+"text": "A person does a slow dance happily."
+},
+{
+"id": "gesture_040",
+"cat": "gesture",
+"text": "A person crosses the arms."
+},
+{
+"id": "locomotion_016",
+"cat": "locomotion",
+"text": "A person jogs forward while swinging the arms."
+},
+{
+"id": "exercise_005",
+"cat": "exercise",
+"text": "A person does squats."
+},
+{
+"id": "everyday_030",
+"cat": "everyday",
+"text": "A person pulls a rope."
+},
+{
+"id": "gesture_010",
+"cat": "gesture",
+"text": "A person points forward with the right arm."
+},
+{
+"id": "gesture_050",
+"cat": "gesture",
+"text": "A person nods and gestures while talking."
+},
+{
+"id": "dance_014",
+"cat": "dance",
+"text": "A person dances with arm waves in place."
+},
+{
+"id": "locomotion_050",
+"cat": "locomotion",
+"text": "A person walks forward and turns right."
+},
+{
+"id": "dance_000",
+"cat": "dance",
+"text": "A person dances energetically."
+},
+{
+"id": "gesture_059",
+"cat": "gesture",
+"text": "A person points to the left twice."
+},
+{
+"id": "locomotion_055",
+"cat": "locomotion",
+"text": "A person marches in place."
+},
+{
+"id": "locomotion_022",
+"cat": "locomotion",
+"text": "A person walks backward carefully."
+},
+{
+"id": "gesture_014",
+"cat": "gesture",
+"text": "A person points forward with the right arm twice."
+},
+{
+"id": "exercise_020",
+"cat": "exercise",
+"text": "A person stretches the arms overhead."
+},
+{
+"id": "exercise_060",
+"cat": "exercise",
+"text": "A person does calf raises."
+},
+{
+"id": "exercise_042",
+"cat": "exercise",
+"text": "A person kicks forward with the left leg quickly."
+},
+{
+"id": "gesture_055",
+"cat": "gesture",
+"text": "A person points to the left."
+},
+{
+"id": "everyday_038",
+"cat": "everyday",
+"text": "A person throws a ball carefully."
+},
+{
+"id": "gesture_007",
+"cat": "gesture",
+"text": "A person waves with both hands enthusiastically."
+},
+{
+"id": "dance_017",
+"cat": "dance",
+"text": "A person does a hip hop dance slowly."
+},
+{
+"id": "gesture_008",
+"cat": "gesture",
+"text": "A person waves with both hands while walking slowly."
+},
+{
+"id": "gesture_042",
+"cat": "gesture",
+"text": "A person crosses the arms enthusiastically."
+},
+{
+"id": "everyday_041",
+"cat": "everyday",
+"text": "A person catches a ball slowly."
+},
+{
+"id": "gesture_003",
+"cat": "gesture",
+"text": "A person waves with the right hand while walking slowly."
+},
+{
+"id": "everyday_062",
+"cat": "everyday",
+"text": "A person taps a phone while stepping forward."
+},
+{
+"id": "dance_006",
+"cat": "dance",
+"text": "A person does a disco dance happily."
+},
+{
+"id": "exercise_034",
+"cat": "exercise",
+"text": "A person does a side stretch with energy."
+},
+{
+"id": "locomotion_043",
+"cat": "locomotion",
+"text": "A person walks in a circle with a relaxed posture."
+},
+{
+"id": "exercise_013",
+"cat": "exercise",
+"text": "A person does lunges three times."
+},
+{
+"id": "exercise_038",
+"cat": "exercise",
+"text": "A person kicks forward with the right leg three times."
+},
+{
+"id": "exercise_074",
+"cat": "exercise",
+"text": "A person shadow boxes with energy."
+},
+{
+"id": "exercise_033",
+"cat": "exercise",
+"text": "A person does a side stretch three times."
+},
+{
+"id": "exercise_036",
+"cat": "exercise",
+"text": "A person kicks forward with the right leg slowly."
+},
+{
+"id": "locomotion_010",
+"cat": "locomotion",
+"text": "A person walks quickly forward."
+},
+{
+"id": "exercise_073",
+"cat": "exercise",
+"text": "A person shadow boxes three times."
+},
+{
+"id": "dance_013",
+"cat": "dance",
+"text": "A person dances with arm waves with big movements."
+},
+{
+"id": "dance_025",
+"cat": "dance",
+"text": "A person does a twirl."
+},
+{
+"id": "gesture_028",
+"cat": "gesture",
+"text": "A person gives a thumbs up while walking slowly."
+},
+{
+"id": "gesture_054",
+"cat": "gesture",
+"text": "A person nods and gestures while talking twice."
+},
+{
+"id": "dance_060",
+"cat": "dance",
+"text": "A person does a slow dance."
+},
+{
+"id": "dance_051",
+"cat": "dance",
+"text": "A person shuffles the feet while dancing happily."
+},
+{
+"id": "exercise_016",
+"cat": "exercise",
+"text": "A person does arm circles slowly."
+},
+{
+"id": "dance_070",
+"cat": "dance",
+"text": "A person does a celebration dance."
+},
+{
+"id": "everyday_050",
+"cat": "everyday",
+"text": "A person carries a box."
+},
+{
+"id": "dance_002",
+"cat": "dance",
+"text": "A person dances energetically slowly."
+},
+{
+"id": "everyday_022",
+"cat": "everyday",
+"text": "A person stretches after waking up while stepping forward."
+},
+{
+"id": "everyday_032",
+"cat": "everyday",
+"text": "A person pulls a rope while stepping forward."
+},
+{
+"id": "exercise_054",
+"cat": "exercise",
+"text": "A person does high knees in place with energy."
+},
+{
+"id": "everyday_002",
+"cat": "everyday",
+"text": "A person picks something up from the floor while stepping forward."
+},
+{
+"id": "everyday_018",
+"cat": "everyday",
+"text": "A person checks a wristwatch carefully."
+},
+{
+"id": "dance_009",
+"cat": "dance",
+"text": "A person does a disco dance in place."
+},
+{
+"id": "dance_050",
+"cat": "dance",
+"text": "A person shuffles the feet while dancing."
+},
+{
+"id": "exercise_028",
+"cat": "exercise",
+"text": "A person touches the toes three times."
+},
+{
+"id": "everyday_044",
+"cat": "everyday",
+"text": "A person catches a ball and then stands still."
+},
+{
+"id": "exercise_011",
+"cat": "exercise",
+"text": "A person does lunges slowly."
+},
+{
+"id": "exercise_043",
+"cat": "exercise",
+"text": "A person kicks forward with the left leg three times."
+},
+{
+"id": "exercise_066",
+"cat": "exercise",
+"text": "A person stretches the right leg slowly."
+},
+{
+"id": "locomotion_051",
+"cat": "locomotion",
+"text": "A person walks forward and turns right while swinging the arms."
+},
+{
+"id": "gesture_029",
+"cat": "gesture",
+"text": "A person gives a thumbs up twice."
+},
+{
+"id": "locomotion_061",
+"cat": "locomotion",
+"text": "A person tiptoes forward while swinging the arms."
+},
+{
+"id": "dance_048",
+"cat": "dance",
+"text": "A person does a robot dance with big movements."
+},
+{
+"id": "dance_053",
+"cat": "dance",
+"text": "A person shuffles the feet while dancing with big movements."
+},
+{
+"id": "everyday_066",
+"cat": "everyday",
+"text": "A person waits impatiently slowly."
+},
+{
+"id": "gesture_053",
+"cat": "gesture",
+"text": "A person nods and gestures while talking while walking slowly."
+},
+{
+"id": "locomotion_057",
+"cat": "locomotion",
+"text": "A person marches in place carefully."
+},
+{
+"id": "everyday_014",
+"cat": "everyday",
+"text": "A person looks around and then stands still."
+},
+{
+"id": "dance_010",
+"cat": "dance",
+"text": "A person dances with arm waves."
+},
+{
+"id": "exercise_014",
+"cat": "exercise",
+"text": "A person does lunges with energy."
+},
+{
+"id": "dance_036",
+"cat": "dance",
+"text": "A person does a salsa step happily."
+},
+{
+"id": "dance_063",
+"cat": "dance",
+"text": "A person does a slow dance with big movements."
+},
+{
+"id": "dance_039",
+"cat": "dance",
+"text": "A person does a salsa step in place."
+},
+{
+"id": "gesture_001",
+"cat": "gesture",
+"text": "A person waves with the right hand while standing still."
+},
+{
+"id": "everyday_016",
+"cat": "everyday",
+"text": "A person checks a wristwatch slowly."
+},
+{
+"id": "dance_072",
+"cat": "dance",
+"text": "A person does a celebration dance slowly."
+},
+{
+"id": "gesture_064",
+"cat": "gesture",
+"text": "A person points to the right twice."
+},
+{
+"id": "exercise_069",
+"cat": "exercise",
+"text": "A person stretches the right leg with energy."
+},
+{
+"id": "dance_005",
+"cat": "dance",
+"text": "A person does a disco dance."
+},
+{
+"id": "gesture_060",
+"cat": "gesture",
+"text": "A person points to the right."
+},
+{
+"id": "dance_027",
+"cat": "dance",
+"text": "A person does a twirl slowly."
+},
+{
+"id": "locomotion_005",
+"cat": "locomotion",
+"text": "A person walks slowly forward."
+},
+{
+"id": "gesture_057",
+"cat": "gesture",
+"text": "A person points to the left enthusiastically."
+},
+{
+"id": "dance_066",
+"cat": "dance",
+"text": "A person grooves with the shoulders happily."
+},
+{
+"id": "everyday_021",
+"cat": "everyday",
+"text": "A person stretches after waking up slowly."
+},
+{
+"id": "dance_059",
+"cat": "dance",
+"text": "A person dances with jumps in place."
+},
+{
+"id": "dance_008",
+"cat": "dance",
+"text": "A person does a disco dance with big movements."
+},
+{
+"id": "exercise_032",
+"cat": "exercise",
+"text": "A person does a side stretch quickly."
+},
+{
+"id": "locomotion_036",
+"cat": "locomotion",
+"text": "A person turns around in place while swinging the arms."
+},
+{
+"id": "dance_047",
+"cat": "dance",
+"text": "A person does a robot dance slowly."
+},
+{
+"id": "gesture_004",
+"cat": "gesture",
+"text": "A person waves with the right hand twice."
+},
+{
+"id": "exercise_045",
+"cat": "exercise",
+"text": "A person jumps in place."
+},
+{
+"id": "gesture_047",
+"cat": "gesture",
+"text": "A person raises both arms above the head enthusiastically."
+},
+{
+"id": "gesture_044",
+"cat": "gesture",
+"text": "A person crosses the arms twice."
+},
+{
+"id": "everyday_012",
+"cat": "everyday",
+"text": "A person looks around while stepping forward."
+},
+{
+"id": "dance_064",
+"cat": "dance",
+"text": "A person does a slow dance in place."
+},
+{
+"id": "dance_068",
+"cat": "dance",
+"text": "A person grooves with the shoulders with big movements."
+},
+{
+"id": "gesture_046",
+"cat": "gesture",
+"text": "A person raises both arms above the head while standing still."
+},
+{
+"id": "exercise_061",
+"cat": "exercise",
+"text": "A person does calf raises slowly."
+},
+{
+"id": "exercise_004",
+"cat": "exercise",
+"text": "A person does jumping jacks with energy."
+},
+{
+"id": "gesture_013",
+"cat": "gesture",
+"text": "A person points forward with the right arm while walking slowly."
+},
+{
+"id": "locomotion_064",
+"cat": "locomotion",
+"text": "A person tiptoes forward confidently."
+},
+{
+"id": "exercise_044",
+"cat": "exercise",
+"text": "A person kicks forward with the left leg with energy."
+},
+{
+"id": "dance_054",
+"cat": "dance",
+"text": "A person shuffles the feet while dancing in place."
+},
+{
+"id": "dance_024",
+"cat": "dance",
+"text": "A person sways to music in place."
+},
+{
+"id": "everyday_065",
+"cat": "everyday",
+"text": "A person waits impatiently."
+},
+{
+"id": "exercise_056",
+"cat": "exercise",
+"text": "A person twists the torso left and right slowly."
+},
+{
+"id": "locomotion_018",
+"cat": "locomotion",
+"text": "A person jogs forward with a relaxed posture."
+},
+{
+"id": "locomotion_006",
+"cat": "locomotion",
+"text": "A person walks slowly forward while swinging the arms."
+},
+{
+"id": "dance_030",
+"cat": "dance",
+"text": "A person dances side to side."
+},
+{
+"id": "gesture_018",
+"cat": "gesture",
+"text": "A person claps the hands while walking slowly."
+},
+{
+"id": "dance_041",
+"cat": "dance",
+"text": "A person dances and claps happily."
+},
+{
+"id": "gesture_062",
+"cat": "gesture",
+"text": "A person points to the right enthusiastically."
+},
+{
+"id": "everyday_006",
+"cat": "everyday",
+"text": "A person reaches up to a high shelf slowly."
+},
+{
+"id": "everyday_046",
+"cat": "everyday",
+"text": "A person sweeps the floor slowly."
+},
+{
+"id": "locomotion_000",
+"cat": "locomotion",
+"text": "A person walks forward."
+},
+{
+"id": "exercise_046",
+"cat": "exercise",
+"text": "A person jumps in place slowly."
+},
+{
+"id": "exercise_055",
+"cat": "exercise",
+"text": "A person twists the torso left and right."
+},
+{
+"id": "dance_001",
+"cat": "dance",
+"text": "A person dances energetically happily."
+},
+{
+"id": "gesture_012",
+"cat": "gesture",
+"text": "A person points forward with the right arm enthusiastically."
+},
+{
+"id": "locomotion_028",
+"cat": "locomotion",
+"text": "A person sidesteps to the left with a relaxed posture."
+},
+{
+"id": "dance_003",
+"cat": "dance",
+"text": "A person dances energetically with big movements."
+},
+{
+"id": "gesture_037",
+"cat": "gesture",
+"text": "A person shrugs the shoulders enthusiastically."
+},
+{
+"id": "locomotion_053",
+"cat": "locomotion",
+"text": "A person walks forward and turns right with a relaxed posture."
+},
+{
+"id": "locomotion_017",
+"cat": "locomotion",
+"text": "A person jogs forward carefully."
+},
+{
+"id": "dance_067",
+"cat": "dance",
+"text": "A person grooves with the shoulders slowly."
+},
+{
+"id": "locomotion_015",
+"cat": "locomotion",
+"text": "A person jogs forward."
+},
+{
+"id": "exercise_048",
+"cat": "exercise",
+"text": "A person jumps in place three times."
+},
+{
+"id": "exercise_012",
+"cat": "exercise",
+"text": "A person does lunges quickly."
+},
+{
+"id": "dance_056",
+"cat": "dance",
+"text": "A person dances with jumps happily."
+},
+{
+"id": "locomotion_026",
+"cat": "locomotion",
+"text": "A person sidesteps to the left while swinging the arms."
+},
+{
+"id": "everyday_031",
+"cat": "everyday",
+"text": "A person pulls a rope slowly."
+},
+{
+"id": "everyday_026",
+"cat": "everyday",
+"text": "A person pushes a heavy object slowly."
+},
+{
+"id": "gesture_026",
+"cat": "gesture",
+"text": "A person gives a thumbs up while standing still."
+},
+{
+"id": "gesture_025",
+"cat": "gesture",
+"text": "A person gives a thumbs up."
+},
+{
+"id": "gesture_068",
+"cat": "gesture",
+"text": "A person covers the face with the hands while walking slowly."
+},
+{
+"id": "dance_011",
+"cat": "dance",
+"text": "A person dances with arm waves happily."
+},
+{
+"id": "exercise_049",
+"cat": "exercise",
+"text": "A person jumps in place with energy."
+},
+{
+"id": "gesture_041",
+"cat": "gesture",
+"text": "A person crosses the arms while standing still."
+},
+{
+"id": "locomotion_013",
+"cat": "locomotion",
+"text": "A person walks quickly forward with a relaxed posture."
+},
+{
+"id": "exercise_039",
+"cat": "exercise",
+"text": "A person kicks forward with the right leg with energy."
+},
+{
+"id": "exercise_023",
+"cat": "exercise",
+"text": "A person stretches the arms overhead three times."
+},
+{
+"id": "exercise_017",
+"cat": "exercise",
+"text": "A person does arm circles quickly."
+},
+{
+"id": "everyday_048",
+"cat": "everyday",
+"text": "A person sweeps the floor carefully."
+},
+{
+"id": "gesture_056",
+"cat": "gesture",
+"text": "A person points to the left while standing still."
+},
+{
+"id": "exercise_026",
+"cat": "exercise",
+"text": "A person touches the toes slowly."
+},
+{
+"id": "dance_020",
+"cat": "dance",
+"text": "A person sways to music."
+},
+{
+"id": "gesture_006",
+"cat": "gesture",
+"text": "A person waves with both hands while standing still."
+},
+{
+"id": "gesture_069",
+"cat": "gesture",
+"text": "A person covers the face with the hands twice."
+},
+{
+"id": "exercise_006",
+"cat": "exercise",
+"text": "A person does squats slowly."
+},
+{
+"id": "gesture_019",
+"cat": "gesture",
+"text": "A person claps the hands twice."
+},
+{
+"id": "gesture_061",
+"cat": "gesture",
+"text": "A person points to the right while standing still."
+},
+{
+"id": "gesture_032",
+"cat": "gesture",
+"text": "A person beckons someone to come closer enthusiastically."
+},
+{
+"id": "dance_044",
+"cat": "dance",
+"text": "A person dances and claps in place."
+},
+{
+"id": "locomotion_001",
+"cat": "locomotion",
+"text": "A person walks forward while swinging the arms."
+},
+{
+"id": "locomotion_072",
+"cat": "locomotion",
+"text": "A person walks forward and stops carefully."
+},
+{
+"id": "locomotion_067",
+"cat": "locomotion",
+"text": "A person walks forward with long strides carefully."
+},
+{
+"id": "dance_055",
+"cat": "dance",
+"text": "A person dances with jumps."
+},
+{
+"id": "exercise_000",
+"cat": "exercise",
+"text": "A person does jumping jacks."
+},
+{
+"id": "exercise_062",
+"cat": "exercise",
+"text": "A person does calf raises quickly."
+},
+{
+"id": "dance_004",
+"cat": "dance",
+"text": "A person dances energetically in place."
+},
+{
+"id": "locomotion_003",
+"cat": "locomotion",
+"text": "A person walks forward with a relaxed posture."
+},
+{
+"id": "everyday_005",
+"cat": "everyday",
+"text": "A person reaches up to a high shelf."
+},
+{
+"id": "exercise_018",
+"cat": "exercise",
+"text": "A person does arm circles three times."
+},
+{
+"id": "everyday_010",
+"cat": "everyday",
+"text": "A person looks around."
+},
+{
+"id": "everyday_009",
+"cat": "everyday",
+"text": "A person reaches up to a high shelf and then stands still."
+},
+{
+"id": "locomotion_045",
+"cat": "locomotion",
+"text": "A person walks forward and turns left."
+},
+{
+"id": "locomotion_021",
+"cat": "locomotion",
+"text": "A person walks backward while swinging the arms."
+},
+{
+"id": "locomotion_038",
+"cat": "locomotion",
+"text": "A person turns around in place with a relaxed posture."
+},
+{
+"id": "everyday_039",
+"cat": "everyday",
+"text": "A person throws a ball and then stands still."
+},
+{
+"id": "gesture_022",
+"cat": "gesture",
+"text": "A person salutes enthusiastically."
+},
+{
+"id": "everyday_023",
+"cat": "everyday",
+"text": "A person stretches after waking up carefully."
+},
+{
+"id": "everyday_058",
+"cat": "everyday",
+"text": "A person opens a door carefully."
+},
+{
+"id": "gesture_016",
+"cat": "gesture",
+"text": "A person claps the hands while standing still."
+},
+{
+"id": "gesture_031",
+"cat": "gesture",
+"text": "A person beckons someone to come closer while standing still."
+},
+{
+"id": "exercise_030",
+"cat": "exercise",
+"text": "A person does a side stretch."
+},
+{
+"id": "everyday_024",
+"cat": "everyday",
+"text": "A person stretches after waking up and then stands still."
+},
+{
+"id": "dance_019",
+"cat": "dance",
+"text": "A person does a hip hop dance in place."
+},
+{
+"id": "exercise_071",
+"cat": "exercise",
+"text": "A person shadow boxes slowly."
+},
+{
+"id": "gesture_035",
+"cat": "gesture",
+"text": "A person shrugs the shoulders."
+},
+{
+"id": "exercise_059",
+"cat": "exercise",
+"text": "A person twists the torso left and right with energy."
+},
+{
+"id": "everyday_054",
+"cat": "everyday",
+"text": "A person carries a box and then stands still."
+},
+{
+"id": "everyday_001",
+"cat": "everyday",
+"text": "A person picks something up from the floor slowly."
+},
+{
+"id": "locomotion_071",
+"cat": "locomotion",
+"text": "A person walks forward and stops while swinging the arms."
+},
+{
+"id": "gesture_065",
+"cat": "gesture",
+"text": "A person covers the face with the hands."
+},
+{
+"id": "gesture_027",
+"cat": "gesture",
+"text": "A person gives a thumbs up enthusiastically."
+},
+{
+"id": "dance_049",
+"cat": "dance",
+"text": "A person does a robot dance in place."
+},
+{
+"id": "locomotion_042",
+"cat": "locomotion",
+"text": "A person walks in a circle carefully."
+},
+{
+"id": "dance_029",
+"cat": "dance",
+"text": "A person does a twirl in place."
+},
+{
+"id": "everyday_056",
+"cat": "everyday",
+"text": "A person opens a door slowly."
+},
+{
+"id": "exercise_050",
+"cat": "exercise",
+"text": "A person does high knees in place."
+},
+{
+"id": "dance_042",
+"cat": "dance",
+"text": "A person dances and claps slowly."
+},
+{
+"id": "gesture_051",
+"cat": "gesture",
+"text": "A person nods and gestures while talking while standing still."
+},
+{
+"id": "locomotion_066",
+"cat": "locomotion",
+"text": "A person walks forward with long strides while swinging the arms."
+},
+{
+"id": "everyday_071",
+"cat": "everyday",
+"text": "A person bows politely slowly."
+},
+{
+"id": "gesture_036",
+"cat": "gesture",
+"text": "A person shrugs the shoulders while standing still."
+},
+{
+"id": "dance_018",
+"cat": "dance",
+"text": "A person does a hip hop dance with big movements."
+},
+{
+"id": "everyday_027",
+"cat": "everyday",
+"text": "A person pushes a heavy object while stepping forward."
+},
+{
+"id": "locomotion_059",
+"cat": "locomotion",
+"text": "A person marches in place confidently."
+},
+{
+"id": "gesture_011",
+"cat": "gesture",
+"text": "A person points forward with the right arm while standing still."
+},
+{
+"id": "exercise_031",
+"cat": "exercise",
+"text": "A person does a side stretch slowly."
+},
+{
+"id": "everyday_011",
+"cat": "everyday",
+"text": "A person looks around slowly."
+},
+{
+"id": "locomotion_011",
+"cat": "locomotion",
+"text": "A person walks quickly forward while swinging the arms."
+},
+{
+"id": "exercise_027",
+"cat": "exercise",
+"text": "A person touches the toes quickly."
+},
+{
+"id": "exercise_047",
+"cat": "exercise",
+"text": "A person jumps in place quickly."
+},
+{
+"id": "gesture_070",
+"cat": "gesture",
+"text": "A person gives a high five."
+},
+{
+"id": "everyday_003",
+"cat": "everyday",
+"text": "A person picks something up from the floor carefully."
+},
+{
+"id": "exercise_008",
+"cat": "exercise",
+"text": "A person does squats three times."
+},
+{
+"id": "dance_045",
+"cat": "dance",
+"text": "A person does a robot dance."
+},
+{
+"id": "locomotion_033",
+"cat": "locomotion",
+"text": "A person sidesteps to the right with a relaxed posture."
+},
+{
+"id": "everyday_017",
+"cat": "everyday",
+"text": "A person checks a wristwatch while stepping forward."
+},
+{
+"id": "gesture_063",
+"cat": "gesture",
+"text": "A person points to the right while walking slowly."
+},
+{
+"id": "locomotion_047",
+"cat": "locomotion",
+"text": "A person walks forward and turns left carefully."
+},
+{
+"id": "dance_057",
+"cat": "dance",
+"text": "A person dances with jumps slowly."
+},
+{
+"id": "everyday_008",
+"cat": "everyday",
+"text": "A person reaches up to a high shelf carefully."
+},
+{
+"id": "dance_015",
+"cat": "dance",
+"text": "A person does a hip hop dance."
+},
+{
+"id": "exercise_029",
+"cat": "exercise",
+"text": "A person touches the toes with energy."
+},
+{
+"id": "exercise_024",
+"cat": "exercise",
+"text": "A person stretches the arms overhead with energy."
+},
+{
+"id": "dance_012",
+"cat": "dance",
+"text": "A person dances with arm waves slowly."
+},
+{
+"id": "locomotion_039",
+"cat": "locomotion",
+"text": "A person turns around in place confidently."
+},
+{
+"id": "locomotion_020",
+"cat": "locomotion",
+"text": "A person walks backward."
+},
+{
+"id": "exercise_065",
+"cat": "exercise",
+"text": "A person stretches the right leg."
+},
+{
+"id": "everyday_025",
+"cat": "everyday",
+"text": "A person pushes a heavy object."
+},
+{
+"id": "dance_073",
+"cat": "dance",
+"text": "A person does a celebration dance with big movements."
+},
+{
+"id": "dance_046",
+"cat": "dance",
+"text": "A person does a robot dance happily."
+},
+{
+"id": "gesture_009",
+"cat": "gesture",
+"text": "A person waves with both hands twice."
+},
+{
+"id": "dance_035",
+"cat": "dance",
+"text": "A person does a salsa step."
+},
+{
+"id": "everyday_037",
+"cat": "everyday",
+"text": "A person throws a ball while stepping forward."
+},
+{
+"id": "dance_032",
+"cat": "dance",
+"text": "A person dances side to side slowly."
+},
+{
+"id": "dance_069",
+"cat": "dance",
+"text": "A person grooves with the shoulders in place."
+},
+{
+"id": "gesture_072",
+"cat": "gesture",
+"text": "A person gives a high five enthusiastically."
+},
+{
+"id": "everyday_004",
+"cat": "everyday",
+"text": "A person picks something up from the floor and then stands still."
+},
+{
+"id": "exercise_025",
+"cat": "exercise",
+"text": "A person touches the toes."
+},
+{
+"id": "everyday_028",
+"cat": "everyday",
+"text": "A person pushes a heavy object carefully."
+},
+{
+"id": "everyday_043",
+"cat": "everyday",
+"text": "A person catches a ball carefully."
+},
+{
+"id": "dance_007",
+"cat": "dance",
+"text": "A person does a disco dance slowly."
+},
+{
+"id": "everyday_069",
+"cat": "everyday",
+"text": "A person waits impatiently and then stands still."
+},
+{
+"id": "locomotion_041",
+"cat": "locomotion",
+"text": "A person walks in a circle while swinging the arms."
+},
+{
+"id": "gesture_049",
+"cat": "gesture",
+"text": "A person raises both arms above the head twice."
+},
+{
+"id": "dance_028",
+"cat": "dance",
+"text": "A person does a twirl with big movements."
+},
+{
+"id": "gesture_052",
+"cat": "gesture",
+"text": "A person nods and gestures while talking enthusiastically."
+},
+{
+"id": "exercise_003",
+"cat": "exercise",
+"text": "A person does jumping jacks three times."
+},
+{
+"id": "exercise_035",
+"cat": "exercise",
+"text": "A person kicks forward with the right leg."
+},
+{
+"id": "everyday_007",
+"cat": "everyday",
+"text": "A person reaches up to a high shelf while stepping forward."
+},
+{
+"id": "dance_043",
+"cat": "dance",
+"text": "A person dances and claps with big movements."
+},
+{
+"id": "everyday_013",
+"cat": "everyday",
+"text": "A person looks around carefully."
+},
+{
+"id": "exercise_010",
+"cat": "exercise",
+"text": "A person does lunges."
+},
+{
+"id": "exercise_068",
+"cat": "exercise",
+"text": "A person stretches the right leg three times."
+},
+{
+"id": "everyday_047",
+"cat": "everyday",
+"text": "A person sweeps the floor while stepping forward."
+},
+{
+"id": "everyday_029",
+"cat": "everyday",
+"text": "A person pushes a heavy object and then stands still."
+},
+{
+"id": "gesture_030",
+"cat": "gesture",
+"text": "A person beckons someone to come closer."
+},
+{
+"id": "dance_016",
+"cat": "dance",
+"text": "A person does a hip hop dance happily."
+},
+{
+"id": "dance_052",
+"cat": "dance",
+"text": "A person shuffles the feet while dancing slowly."
+},
+{
+"id": "everyday_063",
+"cat": "everyday",
+"text": "A person taps a phone carefully."
+},
+{
+"id": "locomotion_032",
+"cat": "locomotion",
+"text": "A person sidesteps to the right carefully."
+},
+{
+"id": "everyday_055",
+"cat": "everyday",
+"text": "A person opens a door."
+},
+{
+"id": "locomotion_049",
+"cat": "locomotion",
+"text": "A person walks forward and turns left confidently."
+},
+{
+"id": "exercise_040",
+"cat": "exercise",
+"text": "A person kicks forward with the left leg."
+},
+{
+"id": "gesture_021",
+"cat": "gesture",
+"text": "A person salutes while standing still."
+},
+{
+"id": "dance_031",
+"cat": "dance",
+"text": "A person dances side to side happily."
+},
+{
+"id": "everyday_072",
+"cat": "everyday",
+"text": "A person bows politely while stepping forward."
+},
+{
+"id": "locomotion_052",
+"cat": "locomotion",
+"text": "A person walks forward and turns right carefully."
+},
+{
+"id": "gesture_017",
+"cat": "gesture",
+"text": "A person claps the hands enthusiastically."
+},
+{
+"id": "everyday_061",
+"cat": "everyday",
+"text": "A person taps a phone slowly."
+},
+{
+"id": "exercise_007",
+"cat": "exercise",
+"text": "A person does squats quickly."
+},
+{
+"id": "everyday_067",
+"cat": "everyday",
+"text": "A person waits impatiently while stepping forward."
+},
+{
+"id": "locomotion_060",
+"cat": "locomotion",
+"text": "A person tiptoes forward."
+},
+{
+"id": "everyday_051",
+"cat": "everyday",
+"text": "A person carries a box slowly."
+},
+{
+"id": "locomotion_073",
+"cat": "locomotion",
+"text": "A person walks forward and stops with a relaxed posture."
+},
+{
+"id": "dance_058",
+"cat": "dance",
+"text": "A person dances with jumps with big movements."
+},
+{
+"id": "gesture_073",
+"cat": "gesture",
+"text": "A person gives a high five while walking slowly."
+},
+{
+"id": "locomotion_068",
+"cat": "locomotion",
+"text": "A person walks forward with long strides with a relaxed posture."
+},
+{
+"id": "everyday_060",
+"cat": "everyday",
+"text": "A person taps a phone."
+},
+{
+"id": "locomotion_023",
+"cat": "locomotion",
+"text": "A person walks backward with a relaxed posture."
+},
+{
+"id": "gesture_038",
+"cat": "gesture",
+"text": "A person shrugs the shoulders while walking slowly."
+},
+{
+"id": "locomotion_025",
+"cat": "locomotion",
+"text": "A person sidesteps to the left."
+},
+{
+"id": "exercise_053",
+"cat": "exercise",
+"text": "A person does high knees in place three times."
+},
+{
+"id": "everyday_074",
+"cat": "everyday",
+"text": "A person bows politely and then stands still."
+},
+{
+"id": "everyday_070",
+"cat": "everyday",
+"text": "A person bows politely."
+},
+{
+"id": "locomotion_031",
+"cat": "locomotion",
+"text": "A person sidesteps to the right while swinging the arms."
+},
+{
+"id": "dance_065",
+"cat": "dance",
+"text": "A person grooves with the shoulders."
+},
+{
+"id": "dance_021",
+"cat": "dance",
+"text": "A person sways to music happily."
+},
+{
+"id": "dance_022",
+"cat": "dance",
+"text": "A person sways to music slowly."
+},
+{
+"id": "gesture_039",
+"cat": "gesture",
+"text": "A person shrugs the shoulders twice."
+},
+{
+"id": "locomotion_063",
+"cat": "locomotion",
+"text": "A person tiptoes forward with a relaxed posture."
+},
+{
+"id": "everyday_064",
+"cat": "everyday",
+"text": "A person taps a phone and then stands still."
+},
+{
+"id": "locomotion_030",
+"cat": "locomotion",
+"text": "A person sidesteps to the right."
+},
+{
+"id": "exercise_067",
+"cat": "exercise",
+"text": "A person stretches the right leg quickly."
+},
+{
+"id": "everyday_057",
+"cat": "everyday",
+"text": "A person opens a door while stepping forward."
+},
+{
+"id": "locomotion_046",
+"cat": "locomotion",
+"text": "A person walks forward and turns left while swinging the arms."
+},
+{
+"id": "gesture_048",
+"cat": "gesture",
+"text": "A person raises both arms above the head while walking slowly."
+},
+{
+"id": "locomotion_035",
+"cat": "locomotion",
+"text": "A person turns around in place."
+},
+{
+"id": "exercise_064",
+"cat": "exercise",
+"text": "A person does calf raises with energy."
+},
+{
+"id": "exercise_072",
+"cat": "exercise",
+"text": "A person shadow boxes quickly."
+},
+{
+"id": "locomotion_044",
+"cat": "locomotion",
+"text": "A person walks in a circle confidently."
+},
+{
+"id": "locomotion_019",
+"cat": "locomotion",
+"text": "A person jogs forward confidently."
+},
+{
+"id": "gesture_034",
+"cat": "gesture",
+"text": "A person beckons someone to come closer twice."
+},
+{
+"id": "everyday_034",
+"cat": "everyday",
+"text": "A person pulls a rope and then stands still."
+},
+{
+"id": "locomotion_029",
+"cat": "locomotion",
+"text": "A person sidesteps to the left confidently."
+},
+{
+"id": "everyday_073",
+"cat": "everyday",
+"text": "A person bows politely carefully."
+},
+{
+"id": "exercise_037",
+"cat": "exercise",
+"text": "A person kicks forward with the right leg quickly."
+},
+{
+"id": "locomotion_048",
+"cat": "locomotion",
+"text": "A person walks forward and turns left with a relaxed posture."
+},
+{
+"id": "everyday_049",
+"cat": "everyday",
+"text": "A person sweeps the floor and then stands still."
+},
+{
+"id": "locomotion_037",
+"cat": "locomotion",
+"text": "A person turns around in place carefully."
+},
+{
+"id": "locomotion_024",
+"cat": "locomotion",
+"text": "A person walks backward confidently."
+},
+{
+"id": "dance_033",
+"cat": "dance",
+"text": "A person dances side to side with big movements."
+},
+{
+"id": "exercise_052",
+"cat": "exercise",
+"text": "A person does high knees in place quickly."
+},
+{
+"id": "gesture_002",
+"cat": "gesture",
+"text": "A person waves with the right hand enthusiastically."
+},
+{
+"id": "exercise_015",
+"cat": "exercise",
+"text": "A person does arm circles."
+}
+]

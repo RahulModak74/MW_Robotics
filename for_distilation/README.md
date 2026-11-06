@@ -27,6 +27,7 @@ auditable.
 | `compare_mw_vs_std.py`, `robustness_compare.py` | Side-by-side scoring of MW policies against plain MLP / CVAE policies, clean and under noise and pushes |
 | `eval_student.py` | Score a trained student on held-out seeds, with adjustable latent-query settings |
 | `app_3d.py`, `static_3d/` | Flask + Three.js viewer; always runs inference on CPU |
+| [`protomotions_g1/`](protomotions_g1/README.md) | **MW student of NVIDIA ProtoMotions' Unitree G1 tracker**: 500 generated motions, unseen dance clip danced 7/7, fall warning AUROC 0.996, video |
 | `checkpoints_3d/` | a trained PPO teacher (3M steps) and reports, so you can start from the data step |
 | `docs/NEW_APPROACH.md` | notes on taking the teacher further (longer training, entropy bonus, LR schedule, reward shaping) |
 | `../STUDENT_COLLAPSE_FIXES.md` | the planned improvements to the student (features, priors, diagnostics) |
