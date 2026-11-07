@@ -1,6 +1,6 @@
 # Unitree G1: an MW policy distilled from NVIDIA ProtoMotions dances a clip it never saw
 
-**Part 1 of MW Robotics, ready.** A 1.65-million-parameter MW policy (7.7 MB, CPU) distilled from NVIDIA ProtoMotions' G1 whole-body
+**Part 1 of MW Robotics, working in simulation.** A 1.65-million-parameter MW policy (7.7 MB, CPU) distilled from NVIDIA ProtoMotions' G1 whole-body
 motion tracker (`g1-bones-deploy`, trained by NVIDIA with reinforcement learning on the BONES-SEED corpus). The exam is a **dance
 clip the student never saw**: not one dance motion is in its training data. Everything runs in MuJoCo and is scored by
 **ProtoMotions' own evaluator**.
@@ -24,10 +24,13 @@ reached 324 of the 500; a run that visits all 500 (`PM_ORDER=1` in `ours/pm_coll
 | **MW level 2 (state manifold + Bayesian action head)** | **7/7** | **3/3** | **20/21** | 24/30 |
 | Teacher | 7/7 | 3/3 | 21/21 | 30/30 |
 
+* **Per run, with definitions and 95 % intervals: [`results/EVIDENCE.md`](results/EVIDENCE.md).** With 7 runs per policy the dance
+  intervals overlap: MW level 2 matches the teacher; it is not shown to beat the plain MLP. A 10-seed evaluation is running.
 * **Only MW level 2 never fell on the dance clip**, including every heavy-noise run, and it tracked the dance most closely (worst
   joint error 0.25 rad vs about 0.40; position error 0.13 m vs 0.27 m).
 * **It warns before it fails.** Its Bayesian uncertainty predicts that the evaluator will record a failure within the next 25 steps
-  (0.5 s) with **AUROC 0.996** on the unseen dances and **0.997** on the unseen familiar motions. The plain MLP has no such signal;
+  (0.5 s) with **AUROC 0.996** (95 % interval 0.992–0.999, 6 failed episodes) on the unseen dances and **0.997** (1 failed episode) on the
+  unseen familiar motions; at a fixed threshold every failure was warned 0.2–0.76 s ahead. The plain MLP has no such signal;
   a generic novelty score on the observation (Mahalanobis distance) reaches 0.935.
 * **Small and fast:** 2.3 ms per control step on one thread of a laptop CPU (Intel i5-12450H), uncertainty included; the control
   budget is 20 ms.

@@ -33,7 +33,7 @@ Pushes from upright at speeds the data never contained (5 random seeds, 35 push 
 | Prior student | **0 of 35** |
 | Teacher | 0 of 7 |
 
-Both students fit the teacher's data equally well (error 0.0000 to 0.0002). **The data cannot tell them apart; only the prior
+Both students fit the teacher's data equally well (mean squared error 0.0000 to 0.0012). **The data cannot tell them apart; only the prior
 decides what happens outside it.**
 
 ### Result 2: better than the teacher

@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it and the MW theory document."
+message: "If you use this software, please cite it. Background preprints (Zenodo, not peer reviewed) are listed under references."
 title: "MW Robotics: Bayesian policy distillation for CPU and edge deployment, with physics priors and fall warning"
 version: 0.1.0
 license: Apache-2.0
@@ -11,14 +11,14 @@ authors:
     given-names: Rahul
 references:
   - type: report
-    title: "Formal Theory of the Modak-Walawalkar Framework as Geometric Intelligence"
+    title: "A Student-t(nu=0.8) Prior on Measurement Processes Yields a Riemannian Manifold Simultaneously Consistent with General Relativity and Quantum Mechanics"
     authors:
       - family-names: Modak
         given-names: Rahul
       - family-names: Walawalkar
         given-names: Rahul
     doi: 10.5281/zenodo.19304813
-    url: "https://github.com/RahulModak74/MW_Geometric_Intelligence"
+    url: "https://doi.org/10.5281/zenodo.19304813"
   - type: report
     title: "World Models with an Irreversible Time Axis: A Fourth Family"
     authors:
@@ -27,6 +27,7 @@ references:
       - family-names: Walawalkar
         given-names: Rahul
     doi: 10.5281/zenodo.22954118
+    url: "https://zenodo.org/records/22954118"
     notes: >
       Describes the forward-only-time-axis / causal-cone architecture that would close the
       validator-vs-forecaster gap noted in this repo's docs/ROBOTICS.md. Not yet applied to
