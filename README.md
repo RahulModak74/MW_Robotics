@@ -36,8 +36,9 @@ policies **cheap to run, easy to audit, and safe to deploy**:
 ## The result: Unitree G1 dances a clip it never saw
 
 Teacher: NVIDIA ProtoMotions' G1 whole-body tracker (`g1-bones-deploy`). Training data: the teacher driving the robot on 4 original
-motions plus 500 motions generated with NVIDIA's open Kimodo text-to-motion model (walking, gestures, exercise, everyday actions;
-**no dance at all**). Exam: a dance clip, run clean once and with random action noise 0.1 and 0.2 (3 seeds each), scored by
+motions plus **324 distinct motions generated with NVIDIA's open Kimodo text-to-motion model** (walking, gestures, exercise, everyday
+actions; **no dance at all**). We prepared 500, but the teacher's rollouts picked motions at random and reached 324 of them; a run that
+visits all 500 is under way. Exam: a dance clip, run clean once and with random action noise 0.1 and 0.2 (3 seeds each), scored by
 ProtoMotions' own evaluator in MuJoCo.
 
 | Policy | Dance clip (7 runs) | under heavy noise (0.2) | Warns before a fall? |
@@ -73,7 +74,7 @@ How a policy becomes a manifold, in plain words: [`docs/HOW_IT_WORKS.md`](docs/H
 | none | 0/9 runs |
 | 100, drawn at random | 1/9 |
 | 100, chosen evenly across the four kinds of motion | 3/7 |
-| **500 generated motions** | **7/7** |
+| **324 generated motions** (of 500 prepared) | **7/7** |
 
 The student needs to have seen enough of the space of normal body states; the dance is then just a new path through it.
 

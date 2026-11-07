@@ -27,12 +27,14 @@ and the action mapping (here: joint target = offset + scale × action) and check
 
 ## 2. Choose the training motions, and lock away the exam
 
-* **Variety beats volume.** The student must see the space of normal body states, not one skill. We used 500 motions generated from
+* **Variety beats volume.** The student must see the space of normal body states, not one skill. We prepared 500 motions generated from
   text prompts, **spread evenly** over four kinds: locomotion, gestures, exercise, everyday actions.
   ([`kimodo_data/prompts.json`](../for_distilation/protomotions_g1/kimodo_data/prompts.json), `gen_motions.py`)
 * **The exam must be unseen.** No dance was in training; the exam is a dance clip, plus 30 unseen generated dances and 21 unseen
   familiar motions.
-* Measured on the G1: no extra motions 0/9 dance runs, 100 random 1/9, 100 evenly chosen 3/7, **500: 7/7**.
+* Measured on the G1: no extra motions 0/9 dance runs, 100 random 1/9, 100 evenly chosen 3/7, **324: 7/7**.
+* **Make sure every motion is actually visited.** If the simulator picks the next motion at random, one pass reaches only about
+  63 % of them (our 500 became 324). `pm_collect.py` has `PM_ORDER=1` to visit them in order.
 
 ## 3. Record the teacher
 

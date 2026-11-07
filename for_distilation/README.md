@@ -10,7 +10,7 @@ simulation, and distill it into a small **MW policy** that runs on any CPU and r
 
 ## Start here: [`protomotions_g1/`](protomotions_g1/README.md)
 
-The ready result. NVIDIA ProtoMotions' Unitree G1 tracker distilled into a 7.7 MB MW policy trained on 500 generated motions:
+The ready result. NVIDIA ProtoMotions' Unitree G1 tracker distilled into a 7.7 MB MW policy trained on 324 generated motions:
 
 * an **unseen dance clip, 7/7 runs**, including heavy action noise (plain MLP 6/7);
 * **warning before a fall at AUROC 0.996** on unseen dances;

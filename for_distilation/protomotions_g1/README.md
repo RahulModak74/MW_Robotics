@@ -12,8 +12,9 @@ Video: [`results/video/mw_vs_teacher_dance.mp4`](results/video/mw_vs_teacher_dan
 ## Result
 
 Training data: the teacher driving the robot on the 4 original ProtoMotions motions (walk, wave, high-five, jumping jacks) plus
-**500 motions generated with NVIDIA's open Kimodo text-to-motion model**, 125 each of locomotion, gestures, exercise and everyday
-actions; all dance prompts held out. The dance clip is run clean once and with random action noise 0.1 and 0.2 (3 seeds each):
+**324 distinct motions generated with NVIDIA's open Kimodo text-to-motion model**, from 500 prepared (125 each of locomotion,
+gestures, exercise and everyday actions; all dance prompts held out). The teacher's rollouts picked motions at random, so they
+reached 324 of the 500; a run that visits all 500 (`PM_ORDER=1` in `ours/pm_collect.py`) is under way. The dance clip is run clean once and with random action noise 0.1 and 0.2 (3 seeds each):
 7 independent runs per policy.
 
 | Policy | Dance clip (7 runs) | under heavy noise (0.2) | 21 unseen familiar motions | 30 unseen generated dances |
@@ -43,9 +44,9 @@ small CPU policy can take on the skill from a few hundred motions, robustly, and
 | none | 0/9 runs | [`results/SUMMARY_dance_s0.md`](results/SUMMARY_dance_s0.md) |
 | 100, drawn at random | 1/9 | [`results/SUMMARY_quick100.md`](results/SUMMARY_quick100.md) |
 | 100, chosen evenly (25 per kind of motion) | 3/7 | [`results/SUMMARY_s100_priors.md`](results/SUMMARY_s100_priors.md) (control arm) |
-| **500, chosen evenly** | **7/7** | [`results/SUMMARY_m500.md`](results/SUMMARY_m500.md) |
+| **324, from 500 chosen evenly** | **7/7** | [`results/SUMMARY_m500.md`](results/SUMMARY_m500.md) |
 
-Variety and coverage matter: 100 motions spread evenly beat 100 random ones, and 500 complete the picture.
+Variety and coverage matter: 100 motions spread evenly beat 100 random ones, and 324 complete the picture.
 
 ## What the MW policy is
 
@@ -85,7 +86,7 @@ runs on CPU).
 # 1. generate motions (Kimodo; the Llama-3-8B text encoder is loaded in 4-bit)
 cd kimodo_data && ~/kimodo/venv/bin/python encode_prompts.py --prompts prompts.json --out emb/ \
    && ~/kimodo/venv/bin/python gen_motions.py --prompts prompts.json --emb emb/ --out csv/
-# 2. select 500 training motions, convert, collect teacher rollouts, train the students, evaluate, summarise
+# 2. select 500 training motions (set PM_ORDER=1 so the teacher visits all of them), convert, collect teacher rollouts, train the students, evaluate, summarise
 ./m500.sh                        # stages: select convert collect train eval agg (each waits for CPU/memory < 70 %)
 # 3. optional: 100 evenly chosen motions, priors vs control (reuses the m500 rollouts)
 ./s100_priors.sh

@@ -15,7 +15,7 @@ NVIDIA trained that function with reinforcement learning on large GPUs. We do no
 
 ## 2. Watch the teacher
 
-We let the teacher drive the robot in simulation (MuJoCo) on a few hundred motions: the 4 originals plus 500 motions generated
+We let the teacher drive the robot in simulation (MuJoCo) on a few hundred motions: the 4 originals plus 324 distinct motions generated
 from text prompts ("walk in a circle", "wave with both hands", "do a squat", ...). Every step we record the pair
 *(what it saw, what it did)*. Collecting and training take hours on a gaming laptop, not weeks on a cluster.
 
@@ -36,7 +36,7 @@ Two things come out of this for free:
 The action head looks at the situation **and** its place on the manifold, and outputs the 29 joint targets. Because the manifold
 groups similar moments together, a dance step that was never in the data can still land near moments that were (a squat, a turn,
 an arm swing), and the action is read from there. That is why more varied training motions helped so much: 0/9 dance runs with
-no extra motions, 7/7 with 500.
+no extra motions, 7/7 with 324.
 
 ## 5. Know how sure you are (the Bayesian part)
 

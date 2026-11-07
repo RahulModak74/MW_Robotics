@@ -5,7 +5,8 @@ Teacher input recorded per step (349 numbers - the tracker's deployable observat
 Label: the teacher's clean 29-dim action. The EXECUTED action gets extra Gaussian noise (sigma cycles per episode over PM_NOISES) so the
 data covers states the student will drift into (DART-style); the label stays the teacher's action for the state actually reached.
 
-Env vars: PM_OUT (npz path), PM_STEPS, PM_NOISES (comma list), PM_SEED.  Run via the patched launcher (see run_collect.sh).
+Env vars: PM_OUT (npz path), PM_STEPS, PM_NOISES (comma list), PM_SEED, PM_ORDER (1 = visit the motions in a seeded order, every
+motion once per pass, starting at frame 0; default 0 = ProtoMotions' random sampling, which in one pass reaches only ~63 % of them).  Run via the patched launcher (see run_collect.sh).
 """
 import os, sys, time, numpy as np, torch
 import pm_launch                                              # single-device Fabric patch
@@ -29,8 +30,19 @@ def collect(self):
     mm = self.env.reference_motion.motion_manager
     sim = self.env.simulator
     done_idx, ep, t0 = None, 0, time.time()
+    ordered = os.environ.get("PM_ORDER", "0") == "1" and mm is not None
+    if ordered:
+        n_mot = int(mm.motion_lib.num_motions())
+        order = np.random.default_rng(int(os.environ.get("PM_SEED", "0"))).permutation(n_mot); nxt = 0
+        print(f"[collect] ordered: {n_mot} motions, each visited once per pass", flush=True)
     for step in range(steps):
-        obs, _ = self.env.reset(done_idx)
+        if ordered and (step == 0 or len(done_idx)):
+            ids = torch.arange(self.num_envs, device=self.device) if step == 0 else done_idx
+            mm.assign(ids, motion_ids=torch.full_like(ids, int(order[nxt % n_mot])), motion_times=torch.zeros(len(ids), dtype=mm.motion_times.dtype, device=self.device))
+            nxt += 1
+            obs, _ = self.env.reset(None if step == 0 else done_idx, disable_motion_resample=True)
+        else:
+            obs, _ = self.env.reset(done_idx)
         self.agent.pre_collect_step(step)
         obs = self.agent.add_agent_info_to_obs(obs)
         obs_td = self.agent.obs_dict_to_tensordict(obs)
@@ -51,7 +63,7 @@ def collect(self):
                         done=np.array(DONE), motion=os.environ.get("PM_MOTION_NAME", ""),
                         mid=np.array(MID), root_z=np.array(RZ, np.float32), upright=np.array(UP, np.float32),
                         motion_files=np.array([str(f) for f in getattr(mm.motion_lib, "motion_files", ())]) if mm is not None else np.array([]))
-    print(f"[collect] saved {len(X)} pairs ({ep} episodes) -> {out}", flush=True)
+    print(f"[collect] saved {len(X)} pairs ({ep} episodes, {len(set(MID))} distinct motions) -> {out}", flush=True)
 
 
 BaseEvaluator.simple_test_policy = collect
