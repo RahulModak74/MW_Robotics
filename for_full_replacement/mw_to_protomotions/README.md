@@ -8,9 +8,7 @@ body, plus one stretch test on the full Humanoid-v5 (17 joints, true 3D).
 **Start here: [STATUS.md](STATUS.md)** — a "read this first" five-minute summary at the top,
 then full numbers and honest diagnosis for every stage below it.
 
-**If you want the hour-by-hour story, or need to pick this up after an interruption:**
-[PROGRESS_LOG.md](PROGRESS_LOG.md) — timestamped notes written roughly every 30 minutes
-while this ran, self-contained enough for a fresh agent to resume cold.
+The `*_full.log` files next to each script hold the complete runs.
 
 ## The headline, in one paragraph
 
@@ -31,7 +29,6 @@ cleanly fixed, confirmed in the same session, not left open.
 
 ```
 STATUS.md                   read this first - results and honest diagnosis per stage
-PROGRESS_LOG.md               timestamped working notes, for resuming cold
 
 classical_controller.py       Stage 2, attempt 1: hand-authored gait + PD (fell fast)
 tune_balance.py                Stage 2: PD gain search for standing balance (best: 2.1s)

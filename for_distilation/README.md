@@ -1,104 +1,52 @@
-# Step 1 — GPU teacher, CPU student (`for_distilation/`)
+# Part 1: policy distillation, powered by Bayesian methods (`for_distilation/`)
 
-A pragmatic first step: use a consumer GPU where it helps most (training), and keep **deployment on a plain CPU**.
+Take a policy that a lab trained with large GPUs (and whose licence allows derivative models), watch it drive the robot in
+simulation, and distill it into a small **MW policy** that runs on any CPU and reports, every step, how sure it is.
 
 ```
- PPO teacher  ──(state, action) data──►  MW policy manifold  ──►  app_3d (CPU)
- (GPU or CPU)        ~250-350k rows      PolicyManifold3DVAE        act(s) = latent query
-                                          Pyro SVI, physics priors
+ teacher policy ──(what it sees, what it does)──► MW policy: state manifold + Bayesian action head ──► CPU / edge device
+  (GPU-trained)        a few hundred motions        (Pyro, consumer GPU or CPU to train)                action + uncertainty
 ```
 
-The MW policy manifold is a Bayesian VAE whose decoder is bound by physics laws read from the MuJoCo model (torso height
-envelope, unit quaternion, joint limits, torque limits). The controller **is** a query on that manifold: given the current
-state, find the latent point whose decoded state matches best and read off its action block. The same object also reports
-how far any `(state, action)` pair is from the learned manifold (the MW distance), which is what makes a classical fallback
-auditable.
+## Start here: [`protomotions_g1/`](protomotions_g1/README.md)
 
-## What is here
+The ready result. NVIDIA ProtoMotions' Unitree G1 tracker distilled into a 7.7 MB MW policy trained on 500 generated motions:
+
+* an **unseen dance clip, 7/7 runs**, including heavy action noise (plain MLP 6/7);
+* **warning before a fall at AUROC 0.996** on unseen dances;
+* **2.3 ms per step on one laptop CPU thread**.
+
+Code, result tables, video and the full reproduction recipe are in that folder. To take another policy through the same steps:
+[`../docs/POLICY_TO_PRODUCTION.md`](../docs/POLICY_TO_PRODUCTION.md).
+
+## Also here: the first pipeline (MuJoCo `Humanoid-v5`, PPO teacher)
+
+Our first distillation pipeline, kept because it is self-contained (no ProtoMotions needed) and comes with a 3D browser viewer. The
+teacher is strong; the MW student on this task is **still below the teacher** (work in progress), so treat it as a sandbox.
 
 | File | Purpose |
 |---|---|
 | `train_ppo_teacher_3d.py` | stable-baselines3 PPO teacher on `Humanoid-v5` (parallel CPU environments) |
-| `train_policy_3d.py` | CEM teacher over a small linear policy, plus a plain-PyTorch CVAE baseline |
-| `train_mw_3d.py` | **MW policy manifold** training (Pyro SVI through `MWDetector`), then held-out evaluation |
-| `mw_policy_3d.py` | `PolicyManifold3DVAE` (physics priors) and `ManifoldPolicy` (the latent query) |
-| `policy_3d.py` | features, linear policy, plain CVAE, environment factory |
-| `mw_bundle_policy.py`, `train_mw_bundle_3d.py` | The MW policy as a **fibre bundle** (`ManifoldAlgebra`): the state is the base manifold and the actions are a fibre over it, so the policy is one forward pass, with physics laws as glue maps and per-piece MW distances |
-| `compare_mw_vs_std.py`, `robustness_compare.py` | Side-by-side scoring of MW policies against plain MLP / CVAE policies, clean and under noise and pushes |
-| `eval_student.py` | Score a trained student on held-out seeds, with adjustable latent-query settings |
-| `app_3d.py`, `static_3d/` | Flask + Three.js viewer; always runs inference on CPU |
-| [`protomotions_g1/`](protomotions_g1/README.md) | **MW student of NVIDIA ProtoMotions' Unitree G1 tracker**: 500 generated motions, unseen dance clip danced 7/7, fall warning AUROC 0.996, video |
-| `checkpoints_3d/` | a trained PPO teacher (3M steps) and reports, so you can start from the data step |
-| `docs/NEW_APPROACH.md` | notes on taking the teacher further (longer training, entropy bonus, LR schedule, reward shaping) |
-| `../STUDENT_COLLAPSE_FIXES.md` | the planned improvements to the student (features, priors, diagnostics) |
-
-## Run it
+| `train_mw_3d.py`, `mw_policy_3d.py` | MW policy manifold (`PolicyManifold3DVAE`, physics priors) trained by Pyro SVI on the teacher's data; the controller is a query on the manifold |
+| `mw_bundle_policy.py`, `train_mw_bundle_3d.py` | the MW policy as a fibre bundle: state = base manifold, actions = fibre over it, one forward pass |
+| `train_policy_3d.py`, `policy_3d.py` | a small CEM teacher and a plain CVAE baseline; features and environment factory |
+| `compare_mw_vs_std.py`, `robustness_compare.py`, `eval_student.py` | side-by-side scoring against plain MLP / CVAE policies, clean and under noise and pushes |
+| `app_3d.py`, `static_3d/` | Flask + Three.js viewer (inference on CPU) |
+| `checkpoints_3d/` | a trained 3M-step PPO teacher (577.8 held-out steps over 20 seeds, 8.3 m), so you can start from the data step |
 
 ```bash
-cd for_distilation
-pip install -r requirements.txt
-
-# 1) Teacher. A 3M-step PPO teacher is already in checkpoints_3d/, so you can skip this and go to step 2.
-python train_ppo_teacher_3d.py --env Humanoid-v5 --timesteps 5000000 --envs 10
-
-# 2) Student: collect teacher data and train the MW manifold (uses the GPU automatically if one is available).
+cd for_distilation && pip install -r requirements.txt
+python train_ppo_teacher_3d.py --env Humanoid-v5 --timesteps 5000000 --envs 10      # optional: a teacher is included
 python train_mw_3d.py --env Humanoid-v5 --teacher ppo --latent 32 --hidden 256 --epochs 100 --rows 100000
-
-# 3) Watch it:  http://127.0.0.1:5052
-python app_3d.py
+python app_3d.py                                                                      # http://127.0.0.1:5052
 ```
 
-Useful knobs for `train_mw_3d.py`: `--latent`, `--hidden`, `--epochs`, `--rows` (subsample the teacher data),
-`--workers` (CPU processes for MuJoCo rollouts), `--n_eval` (held-out seeds). Device selection is the framework's own
-(`mw_framework.core.get_device`); force it with `MW_DEVICE=cpu` or `MW_DEVICE=cuda`.
-
-Tools for experimenting with the student (all optional; defaults are unchanged):
-`--data_cache data_cache/ppo_humanoid.npz` collects the teacher data once and reuses it across runs; `--name _tag` keeps
-runs from overwriting each other; `--features gravity` switches orientation to a gravity vector in the torso frame, with
-`--ang_prior` and `--sym_prior` adding angular-speed and left/right-hip priors; each run prints a posterior and
-reconstruction check. `python eval_student.py --ckpt checkpoints_3d/<name>_mw.pth --query_steps 25 --query_lr 0.2` scores any
-trained student on the held-out seeds and lets you vary the latent-query settings without retraining.
-
-Fibre-bundle policy (state base, action fibre) — a good starting point:
-```bash
-python train_mw_3d.py --env Humanoid-v5 --teacher ppo --data_cache data_cache/ppo_humanoid.npz --epochs 1   # collects + caches teacher data
-python train_mw_bundle_3d.py --data_cache data_cache/ppo_humanoid.npz --sigma_a 0.02 --epochs 40 --name _mine
-```
-`--sigma_a` is the action-noise scale of the fibre (smaller makes the state→action map tighter); `--latent_s/--hidden_s`
-size the state base; `--no_priors` drops the physics laws for comparison.
-
-Notes for `app_3d.py`: serving is pinned to CPU by default (`MW_DEVICE=cpu`) because the per-step latent query is tiny;
-`MW_PORT`, `MW_HOST` and `MW_THREADS` are configurable; `/api3d/health` reports the device and loaded bodies; a
-`ppo_teacher` mode appears automatically when the teacher files are present, so teacher and student can be compared side
-by side. Trained student weights (`*.pth`) are not stored in git — train one locally with step 2.
+Device selection follows `mw_framework.core.get_device` (`MW_DEVICE=cpu` or `cuda` to force it). Trained student weights are
+not stored in git.
 
 ## Hardware
 
-- **Training:** a consumer NVIDIA GPU (an RTX 4060 Ti 16 GB was used here) speeds up the Pyro SVI step for the student.
-  MuJoCo simulation itself runs on CPU cores, so a many-core CPU helps just as much for the teacher.
-- **Deployment:** any CPU. No CUDA, no Omniverse, no Isaac.
+* **Training:** a consumer NVIDIA GPU (gaming laptop class) makes training fast; a CPU works, slower. Simulation runs on CPU cores.
+* **Deployment:** any CPU. No CUDA, no vendor runtime, no licence server.
 
-## Results so far (held-out seeds, cap 500 steps, `Humanoid-v5`)
-
-| Controller | Steps | Forward | Notes |
-|---|---|---|---|
-| CEM teacher (linear policy, ~770 params) | 89.4 | 0.69 m | measured |
-| Plain-PyTorch CVAE on CEM data | 91.7 | 0.70 m | measured |
-| **PPO teacher** (3M steps) | **577.8** (20 seeds) | **8.30 m** | measured |
-| MW manifold distilled from the PPO teacher | — | — | **in progress** — tuning latent size, training length and the physics priors |
-
-The teacher is the strong, repeatable part of the pipeline today; the work now is bringing the MW student up to it.
-The planned improvements are listed in [../STUDENT_COLLAPSE_FIXES.md](../STUDENT_COLLAPSE_FIXES.md): gravity-vector
-features, stronger priors (angular momentum, left/right symmetry), a posterior diagnostic, and a gentler latent query.
-Projected figures in the older planning documents are targets, not measurements.
-
-## Where this goes next
-
-1. Student reaches the teacher's level (this directory).
-2. DAgger-style self-improvement: query the teacher only where the student is uncertain.
-3. Real-time CPU inference with a classical PD/LQR fallback.
-4. Step 2 — remove the teacher entirely: [../for_full_replacement/](../for_full_replacement/).
-
-See [../ROADMAP.md](../ROADMAP.md).
-
-*Research code — not a safety system; do not use it to control a real robot.*
+*Research code, simulation results; not a certified safety system.*

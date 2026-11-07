@@ -15,6 +15,7 @@ Tolerances are calibrated on the TEACHER's own transitions (quantile, default 95
 Observation layout (349): proprio 0:64 = dof_pos 0:29, dof_vel 29:58, torso ang vel 58:61, gravity in torso frame 61:64;
 future targets 64:320 = 4 steps x [6 rel. torso rot (tan-norm), 29 ref dof_vel, 29 ref dof_pos]; previous actions 320:349.
 """
+import os
 import numpy as np
 import torch
 
@@ -97,7 +98,7 @@ def pd_map():
     """Deployment action mapping: joint target = offset + scale * action (unified_pipeline.yaml). The observation's previous-action
     block is exactly this joint target (checked: max |diff| 0.00000)."""
     import os, yaml
-    y = yaml.safe_load(open(os.path.expanduser("" + os.environ.get("PM", os.path.expanduser("~/ProtoMotions")) + "/data/pretrained_models/motion_tracker/"
+    y = yaml.safe_load(open(os.path.expanduser("~/EXPERIMENTA_ROBOTICA/third_party/ProtoMotions/data/pretrained_models/motion_tracker/"
                                                  "g1-bones-deploy/compiled_models/unified_pipeline.yaml")))
     return torch.tensor(y["control"]["pd_action_offset"], dtype=torch.float32), torch.tensor(y["control"]["action_scale"], dtype=torch.float32)
 
@@ -121,14 +122,18 @@ def joint_limits():
     return r[:, 0], r[:, 1]
 
 
-def transitions(files, drop_falls=True):
-    """(x_t, a_t, p_{t+1}) within episodes from pm_collect npz files; drops episodes where the teacher fell."""
+def transitions(files, drop_falls=True, keep_motions=None):
+    """(x_t, a_t, p_{t+1}) within episodes from pm_collect npz files; drops episodes where the teacher fell.
+    keep_motions: optional set of motion file names; in files that record them (mid + motion_files) only those motions' episodes are kept."""
     Xs, As, Ps = [], [], []
     for f in files:
         z = np.load(f); X, A, ep = z["X"], z["A"], z["ep"]
         ok = np.ones(len(X), bool)
         if drop_falls and "root_z" in z.files:
             bad = np.unique(ep[(z["root_z"] < 0.45) | (z["upright"] < 0.5)]); ok = ~np.isin(ep, bad)
+        if keep_motions is not None and "mid" in z.files and len(z["motion_files"]):
+            names = np.array([os.path.basename(str(m)) for m in z["motion_files"]])
+            ok &= np.isin(names[z["mid"]], list(keep_motions))
         same = (ep[:-1] == ep[1:]) & ok[:-1] & ok[1:]
         Xs.append(X[:-1][same]); As.append(A[:-1][same]); Ps.append(X[1:][same][:, :64])
     return np.concatenate(Xs), np.concatenate(As), np.concatenate(Ps)
@@ -136,7 +141,7 @@ def transitions(files, drop_falls=True):
 
 if __name__ == "__main__":
     import glob, os, sys
-    d = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data_pm")
+    d = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/EXPERIMENTA_ROBOTICA/data_pm")
     pats = sys.argv[2].split(",") if len(sys.argv) > 2 else ["walk", "wave", "high5", "jumpjack", "uncond", "dance"]
     pri = Priors()
     for p in pats:

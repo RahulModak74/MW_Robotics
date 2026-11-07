@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it and the MW theory document."
-title: "MW Robotics: physics-constrained Bayesian manifold learning, trimmed to a robotics PDE"
+title: "MW Robotics: Bayesian policy distillation for CPU and edge deployment, with physics priors and fall warning"
 version: 0.1.0
 license: Apache-2.0
 authors:

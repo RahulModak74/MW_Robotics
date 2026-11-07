@@ -1,54 +1,113 @@
-# MW Robotics (MW: Modak-Walawalkar) 
+# MW Robotics (MW: Modak-Walawalkar)
 
-**Humanoid control policies that train and run on a CPU — for teams who can't afford the Isaac stack.**
+**Take a robot policy trained by a leading lab, turn it into a small Bayesian policy that runs on an ordinary CPU, and that warns
+you before it is about to fail.**
 
-Modern humanoid control (NVIDIA Isaac / ProtoMotions) is built on data-center GPUs and a vendor runtime. MuJoCo gives
-everyone a free, excellent physics engine, but it is a simulator, not a policy trainer: there is no MuJoCo-native equivalent
-of Isaac's training stack. **MW Robotics fills that gap** with a physics-constrained policy learner
-(the Modak-Walawalkar method) that needs thousands of samples rather than billions, and is designed to deploy on a
-$500-class CPU.
-
-## What is the MW (Modak-Walawalkar) framework?
-
-MW is an advanced Monte Carlo approach: the high-dimensional sample space is cut down by Bayesian priors, and what remains
-is a low-dimensional **manifold**. Because the priors encode the physics of the system (for batteries, the DFN equations),
-the manifold *is* the solution set of those physical equations, not just a fit to data. Fibre bundles can then stitch several
-such systems together. The full theory and worked examples are in the public
-**[MW_Geometric_Intelligence](https://github.com/RahulModak74/MW_Geometric_Intelligence)** repository; this repo applies the
-method to robotics.
-
-## The goal: CPU only, end to end
-
-No GPU for training. No GPU for deployment. No Omniverse, no Isaac, no licence server. Physics priors (joint and torque
-limits, balance, symmetry) replace brute-force simulation, and every policy reports how far it is from what it was trained on,
-so a classical controller can take over when it should.
-
-## Two steps, one destination
-
-Many teams in the Global South already own a consumer GPU. So we get there in two steps:
-
-| Step | What it is | Status |
+| | What it is | Status |
 |---|---|---|
-| **Step 1 — consumer-GPU support** [`for_distilation/`](for_distilation/) | Use the card you already have (an RTX 4060-class is plenty) to train a standard RL teacher, and distill it into an MW policy that **runs on a plain CPU**. Useful today. | Teacher and student  working|
-| **Step 2 — full replacement** [`for_full_replacement/`](for_full_replacement/) | Drop the teacher and the GPU entirely: the MW model learns the policy directly on CPU. **This is the end goal.** | In progress |
+| **Part 1: policy distillation, powered by Bayesian methods** ([`for_distilation/`](for_distilation/)) | A licensed teacher policy (for example NVIDIA ProtoMotions' Unitree G1 tracker) is distilled into a ~7 MB MW policy that runs on any CPU, down to edge devices, and raises a warning before a mistake happens | **Ready.** Unitree G1 dances a clip it never saw, 7/7 runs; warning before falls at AUROC 0.996 |
+| **Part 2: policy generation, together** ([`ROADMAP.md`](ROADMAP.md)) | Heavier, physics-fortified policies, trained with whatever compute is needed, aimed at replacing parts of today's policy-generation pipelines | Research, open to partners |
 
-The plan, stage by stage: **[ROADMAP.md](ROADMAP.md)**. Next steps for the Step 1 student:
-**[STUDENT_COLLAPSE_FIXES.md](STUDENT_COLLAPSE_FIXES.md)**.
+[![MW student (top) vs teacher (bottom) on the unseen dance clip](for_distilation/protomotions_g1/results/video/mw_vs_teacher_dance.jpg)](mw_vs_teacher_dance.mp4)
 
-## What already works (all on CPU)
+*MW student vs NVIDIA's teacher on a dance clip the student never saw ([video](mw_vs_teacher_dance.mp4)). Simulation (MuJoCo).*
 
-- **NEW (Diwali 2026): an MW student dances.** Distilled from NVIDIA ProtoMotions' Unitree G1 tracker with 500 generated
-  motions (no dance among them), the 1.6 M-parameter MW student danced an unseen clip 7/7 times, including under heavy noise,
-  where plain and Bayesian students fell; its uncertainty warns before a fall (AUROC 0.996). Video and tables:
-  [for_distilation/protomotions_g1/](for_distilation/protomotions_g1/README.md).
-- **Six physics domains** with validators — beam, motor joint, planar arm, wheeled robot, hopping leg, motor heat
-  ([docs/ROBOTICS.md](docs/ROBOTICS.md)).
-- **Forecasting** the next state faster than re-simulating, checked against MuJoCo
-  ([docs/FORECASTER.md](docs/FORECASTER.md)).
-- **Coupled bodies** (Walker2d and a 17-joint Humanoid): on the simulated falls tested, the validator warned before the
-  simulator's own termination ([for_full_replacement/mw_to_protomotions/STATUS.md](for_full_replacement/mw_to_protomotions/STATUS.md)).
-- **A strong humanoid teacher** (PPO, ~578 held-out steps, 8.3 m), shipped so you can start from it.
-- **The same mechanism in production** outside robotics (battery-health prediction): no RL, no GPU.
+## Part 1 in one picture
+
+```
+ teacher policy (licence allows        drive the robot in simulation,       MW policy, ~7 MB          any CPU: laptop,
+ derivative models), e.g. NVIDIA  ───► record (what it sees, what it  ───► state manifold      ───►  robot computer,
+ ProtoMotions' G1 tracker              does), on a few hundred motions      + Bayesian action          edge device
+                                                                            head                       │
+                                                                                                       ▼
+                                                                    action  +  "how sure am I?"  ──►  warning / safe fallback
+```
+
+Leading labs already write excellent robot policies with large GPU clusters. Part 1 does not compete with that; it makes those
+policies **cheap to run, easy to audit, and safe to deploy**:
+
+1. **Small:** the dancing G1 policy has 1.65 million parameters (7.7 MB) and takes **2.3 ms per control step on one thread of a
+   laptop CPU** (Intel i5-12450H), including its uncertainty. The robot needs one decision every 20 ms.
+2. **Honest about what it knows (the main value):** every step, the policy reports how far the situation is from what it learned. On
+   unseen dances that signal **predicts a fall within the next 0.5 s with AUROC 0.996** (0.997 on unseen everyday motions), so a
+   fallback controller can take over *before* the wrong step happens.
+3. **Robust:** it kept the robot dancing under heavy action noise where the plain copy fell.
+
+## The result: Unitree G1 dances a clip it never saw
+
+Teacher: NVIDIA ProtoMotions' G1 whole-body tracker (`g1-bones-deploy`). Training data: the teacher driving the robot on 4 original
+motions plus 500 motions generated with NVIDIA's open Kimodo text-to-motion model (walking, gestures, exercise, everyday actions;
+**no dance at all**). Exam: a dance clip, run clean once and with random action noise 0.1 and 0.2 (3 seeds each), scored by
+ProtoMotions' own evaluator in MuJoCo.
+
+| Policy | Dance clip (7 runs) | under heavy noise (0.2) | Warns before a fall? |
+|---|---|---|---|
+| Plain MLP (a straight copy of the teacher) | 6/7 | 2/3 | no signal of its own |
+| MW level 1 (Bayesian action head only) | 5/7 | 1/3 | yes: AUROC 0.990 |
+| **MW level 2 (state manifold + Bayesian action head)** | **7/7** | **3/3** | **yes: AUROC 0.996** |
+| Teacher (NVIDIA, for reference) | 7/7 | 3/3 | – |
+
+The manifold is what made the difference: the same Bayesian head without it did worse than the plain copy. Full tables,
+including 21 unseen familiar motions and 30 unseen generated dances, and how to reproduce:
+[`for_distilation/protomotions_g1/`](for_distilation/protomotions_g1/README.md).
+
+### Two kinds of students, nothing in between
+
+To keep this simple we compare only two families:
+
+* **Plain MLP:** an ordinary neural network fitted to the teacher's actions. It copies well, but it cannot tell you when it is out of
+  its depth.
+* **MW, at increasing levels:** every MW policy is Bayesian and reports its own uncertainty.
+  * *MW level 1:* Bayesian action head only (an exact posterior over the last layer).
+  * *MW level 2:* **state manifold + Bayesian action head.** This is the 7/7 policy. It first places the robot's situation on a
+    learned map of normal body states (the manifold), then reads the action from that place.
+  * *MW level 3 (in progress):* level 2 plus physics priors (balance, upright torso, joint limits) checked on the consequences
+    of each action. See [`docs/BEYOND_THE_TEACHER.md`](docs/BEYOND_THE_TEACHER.md).
+
+How a policy becomes a manifold, in plain words: [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md).
+
+### More motions, better policy
+
+| Training motions (besides the 4 originals) | MW policy on the dance clip |
+|---|---|
+| none | 0/9 runs |
+| 100, drawn at random | 1/9 |
+| 100, chosen evenly across the four kinds of motion | 3/7 |
+| **500 generated motions** | **7/7** |
+
+The student needs to have seen enough of the space of normal body states; the dance is then just a new path through it.
+
+## Which teacher policies you may use
+
+Only policies whose licence allows it. Distillation creates a model *derived* from the teacher, so check, before you start:
+
+* the **teacher's licence** allows derivative models (and commercial use, if you need it). NVIDIA's G1 tracker is under the
+  NVIDIA Open Model License, which permits derivative models, including commercially, with an attribution notice when
+  you redistribute them;
+* the licences of the **motions** you train on and of any **text encoder** used to generate them;
+* **attribution** notices travel with what you ship.
+
+This repository contains our code only: no NVIDIA weights, no generated motions, no trained student weights. The scripts
+regenerate everything. Step by step: [`docs/POLICY_TO_PRODUCTION.md`](docs/POLICY_TO_PRODUCTION.md).
+
+## Part 2: policy generation, together
+
+Distillation needs a teacher. Part 2 is about producing **heavily fortified policies** in the first place, and replacing *parts*
+of today's policy-generation pipelines with Bayesian, physics-first pieces: physics priors that rule out impossible behaviour
+before training starts, a manifold of accepted (balanced, recoverable) states, and an uncertainty signal built in from day one.
+
+This is heavy work, and the enormous power of GPUs can and should be used for it. **Our stance on GPUs is pragmatic, not
+dogmatic:** we use whatever is easily available, such as the consumer GPUs (gaming laptops) that most teams in the Global South
+already own, and we welcome what large clusters can do. **We oppose barriers, not technology:** closed runtimes, licence
+servers, and hardware that only a few can buy. We are looking for labs and teams to build these policies together. See
+[`ROADMAP.md`](ROADMAP.md).
+
+## What MW is
+
+MW (Modak-Walawalkar) is a Bayesian method: physics knowledge goes in as **priors**, which cut the huge space of possible
+behaviours down to a low-dimensional **manifold** of physically valid states. A policy then becomes a map on that manifold, and
+"how far is this from the manifold?" is a built-in safety signal. Theory and non-robotics examples (for example battery health in
+production, no GPU) are in [MW_Geometric_Intelligence](https://github.com/RahulModak74/MW_Geometric_Intelligence).
 
 ## Quick start
 
@@ -56,30 +115,38 @@ The plan, stage by stage: **[ROADMAP.md](ROADMAP.md)**. Next steps for the Step 
 git clone https://github.com/RahulModak74/MW_Robotics.git && cd MW_Robotics
 python -m venv .venv && . .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -e . && pip install -r for_distilation/requirements.txt
-
-python examples/00_flexible_robot_validator.py          # or 01..05
+python for_distilation/protomotions_g1/examples/policy_priors_demo.py   # the "beyond the teacher" idea, CPU, a few minutes
 pytest -q
 ```
 
-Have a consumer NVIDIA GPU? Install a CUDA build of PyTorch first
-(`pip install torch --index-url https://download.pytorch.org/whl/cu128`) and Step 1 will use it. Without one, everything
-still runs on CPU. Then continue in [for_distilation/](for_distilation/README.md) or
-[for_full_replacement/](for_full_replacement/README.md).
+The G1 pipeline itself needs ProtoMotions, MuJoCo and the teacher checkpoint: see
+[`for_distilation/protomotions_g1/README.md`](for_distilation/protomotions_g1/README.md#reproduce). A consumer NVIDIA GPU speeds up
+training (install a CUDA build of PyTorch first); everything also runs on CPU.
 
 ## Repository map
 
 ```
-mw_framework/            MW core library (physics-constrained Bayesian VAE, Pyro SVI)
-examples/  tests/  mujoco_experiments/  docs/
-for_distilation/         Step 1: consumer-GPU teacher -> CPU policy, plus a 3D demo viewer
-  protomotions_g1/       MW student of NVIDIA's G1 tracker: the dance test (results, video, code)
-for_full_replacement/    Step 2: CPU-native policy learning
-old_content/             earlier specs, plans and the 2D demo, kept for reference
+for_distilation/          Part 1
+  protomotions_g1/        the G1 dance result: code, results, video          <- start here
+  *.py, app_3d.py         earlier distillation pipeline on MuJoCo Humanoid-v5 (PPO teacher), with a 3D viewer
+for_full_replacement/     Part 2 building blocks (validators, early warning, classical fallbacks, transition models)
+mw_framework/             MW core library (physics-constrained Bayesian VAE, Pyro SVI)
+docs/                     how it works, policy to production, beyond the teacher, six physics examples, limitations
+examples/ tests/ mujoco_experiments/
 ```
+
+## Documents
+
+| Read | For |
+|---|---|
+| [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) | how a teacher policy becomes an MW manifold policy, in plain words |
+| [`docs/POLICY_TO_PRODUCTION.md`](docs/POLICY_TO_PRODUCTION.md) | taking a new policy from licence check to a CPU or edge deployment, with the tests it must pass |
+| [`docs/BEYOND_THE_TEACHER.md`](docs/BEYOND_THE_TEACHER.md) | how physics priors let a student outgrow its teacher (pendulum demo) |
+| [`ROADMAP.md`](ROADMAP.md) | Part 2 and what comes next |
+| [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | where priors help, where they do not |
 
 ## Join in
 
-Reproductions, new robot examples and your own results are very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
-Picking this up on another machine, or with an AI agent? Start with **[NEXT_STEP_03nov.md](NEXT_STEP_03nov.md)** — current state, exact commands to reproduce, and the next experiments.
-
-*Research code, not a finished robot and not a safety system. Apache-2.0 (see `LICENSE`); please cite `CITATION.cff`.*
+Reproductions, new teacher policies (with licences that allow it), new robots and honest failures are all welcome: see
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Research code, simulation results; not a certified safety system. Apache-2.0 (see
+[`LICENSE`](LICENSE)); please cite [`CITATION.cff`](CITATION.cff).

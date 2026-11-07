@@ -4,8 +4,8 @@ This repo is `MW_Framework` plus six new robot examples, each a genuinely differ
 physics: a bending beam (a PDE), a motor joint and a wheeled robot (two different ODEs), a
 robot arm (pure geometry, no solving needed), a hopping leg's bounce (an impact problem), and
 motor heating (a second PDE). Run anything from `examples/00_flexible_robot_validator.py`
-through `examples/05_actuator_thermal_validator.py` to try them. [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)
-has concrete next steps for every weak spot below.
+through `examples/05_actuator_thermal_validator.py` to try them. The weak spots below are
+reported as measured.
 
 MW has now been tried in two different jobs, both against a real physics engine (MuJoCo,
 Apache-2.0), on the hopping-leg example: as a **checker** (does this state look physically
@@ -54,17 +54,15 @@ one run.
 (0.55), a bent link (0.67), a hot spot in a motor winding (0.57) — all three share the same
 shape: a small, proportional change that can look similar to normal variation instead of
 clearly breaking a physical rule. This shows up the same way in three unrelated examples, so
-it's a real pattern worth fixing, not noise from one run. [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md)
-lays out specific steps to try — starting with testing a bigger version of the same fault
-first, before changing any code.
+it's a real pattern worth fixing, not noise from one run. The first thing to try is
+testing a bigger version of the same fault, before changing any code.
 
 **Pattern 3 — in the pure-geometry and bounce examples, made-up (but "normal") states satisfy
 their own physics rules more loosely than real data does.** `planar_arm`, `mobile_robot` and
 `legged_contact` generate states whose physics-rule error is 10–30x bigger than the real
 sensor noise. The beam, joint, and thermal examples stay much closer, about 1x. Fault
 detection still works well in two of the three looser ones — this is a separate, specific
-finding about what the model generates by default, with concrete next steps in
-[FIXING_THE_GAPS.md](FIXING_THE_GAPS.md).
+finding about what the model generates by default, worth keeping in mind when reading its scores.
 
 ## The beam's one test that came out backwards
 
@@ -76,8 +74,8 @@ coarse it got.
 
 Here's why: a coarse simulator drops a vibration mode, which removes energy from the system.
 The beam's current rules only flag a trajectory that has *too much* unexplained energy, not
-one that's suspiciously quiet. [FIXING_THE_GAPS.md](FIXING_THE_GAPS.md) proposes a one-line fix
-that's already supported by existing code.
+one that's suspiciously quiet. A one-line fix (a two-sided energy check) is already supported
+by existing code.
 
 ## Predicting the future: the first real test
 

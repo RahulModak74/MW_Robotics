@@ -252,7 +252,7 @@ acts, MW watches and warns - tested directly for the first time here, not just p
 Tuned PD ankle-balance controller: survives 263/1000 steps (2.1s) before falling, confirmed
 by a real gain search, not assumed. LQR attempted as the more principled classical-control
 method; hit two real numerical/modelling snags (documented in `lqr_balance.py`'s own
-comments and `PROGRESS_LOG.md`) - not yet working better than the tuned PD. Real trajectories
+comments) - not yet working better than the tuned PD. Real trajectories
 from the PD controller were good enough to drive Stage 1's real test, which was the actual
 point of this stage.
 

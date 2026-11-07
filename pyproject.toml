@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mw-robotics"
 version = "0.1.0"
-description = "Modak-Walawalkar Framework, trimmed to a robotics PDE (flexible-link / soft-robot beam dynamics)"
+description = "MW Robotics: Bayesian (Modak-Walawalkar) policy distillation that runs on any CPU and warns before failures"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [
