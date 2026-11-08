@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # usage: run_eval_prob.sh <jobs file> [parallel]     jobs: "<tag> <student .pt or 'teacher'> <motion> <noise> <seed> [gate S:T]"
 # Writes $R/eval_prob/<tag>.log (ProtoMotions evaluator output) and <tag>.npz (per-step uncertainty, prob students only). Resumable.
+# A tag whose arm contains "fbw" runs with the fly-by-wire (fbw.py): --fbw, FBW_LA_NOISE = the run's noise, FBW_SEED = its seed;
+# every other FBW_* setting comes from the caller's environment (export them before calling). Writes <tag>_fbw.npz too.
 source "$(dirname "$0")/common.sh"
 JOBS=$(cd "$(dirname "$1")" && pwd)/$(basename "$1"); P=${2:-4}; OUT=${OUT:-$R/eval_prob}; mkdir -p "$OUT"
 export R PY PM OURS CK OUT
@@ -9,8 +11,9 @@ run_one() {
   [ -f "$OUT/$tag.done" ] && return
   extra=""; [ "$st" != "teacher" ] && extra="--student $st --uq-out $OUT/$tag.npz"
   [ -n "$gt" ] && extra="$extra --gate $gt"
+  fenv=""; case "${tag%%__*}" in *fbw*) extra="$extra --fbw"; fenv="FBW_LA_NOISE=$nz FBW_SEED=$sd" ;; esac
   case "$m" in /*|*.pt) mf=$m ;; *) mf=data/g1-kimodo-generated/proto/output_${m}.motion ;; esac   # motion name or a motion-lib path
-  cd "$PM" && "$PY" "$OURS/pm_eval_student.py" $extra --act-noise $nz --seed $sd --simulator mujoco --headless --num-envs 1 --full-eval \
+  cd "$PM" && env $fenv "$PY" "$OURS/pm_eval_student.py" $extra --act-noise $nz --seed $sd --simulator mujoco --headless --num-envs 1 --full-eval \
      --checkpoint $CK --motion-file "$mf" > "$OUT/$tag.log" 2>&1 && touch "$OUT/$tag.done"
 }
 export -f run_one

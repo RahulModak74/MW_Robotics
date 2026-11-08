@@ -33,6 +33,10 @@ uq_out = pop("--uq-out")
 qpos_out = pop("--qpos-out")                                  # per policy step: MuJoCo qpos (for rendering videos)
 QPOS, QNAMES = [], []
 gate = pop("--gate")
+use_fbw = "--fbw" in argv
+if use_fbw:
+    argv.remove("--fbw")
+FBW = {"obj": None, "pred": None, "err": [], "inter": [], "viol": []}
 torch.manual_seed(seed); np.random.seed(seed)
 
 student, prob = None, False
@@ -94,8 +98,31 @@ def policy_action(self, obs_td):
         else:
             a = student(x)
         a = a.to(obs_td[KEYS[0]].device)
+    if use_fbw:                                                # MW fly-by-wire between the pilot (this policy) and the robot
+        from fbw import FlyByWire
+        from priors import pd_map
+        from g1_kin import DOF_NAMES, FEET
+        sim = self.env.simulator
+        if FBW["obj"] is None:
+            FBW["obj"] = FlyByWire(sim, DOF_NAMES, FEET); FBW["off"], FBW["sc"] = (t.numpy().astype(np.float64) for t in pd_map())
+            print("[fbw] on:", FBW["obj"].c, flush=True)
+            def pilot(X):                                      # the same policy, batched, on predicted observations
+                Xt = torch.as_tensor(X, dtype=torch.float32)
+                A = (student.uq(Xt)["action"] if prob else student(Xt)).numpy().astype(np.float64)
+                return FBW["off"] + FBW["sc"] * A
+            FBW["pilot"] = pilot
+        if FBW["pred"] is not None:                            # was the prior's one-step prediction exact?
+            FBW["err"].append(float(np.abs(sim.data.qpos - FBW["pred"]).max()))
+        xo = torch.cat([obs_td[k].reshape(obs_td[k].shape[0], -1) for k in KEYS], -1)[0].cpu().numpy().astype(np.float64)
+        T = FBW["off"] + FBW["sc"] * a[0].cpu().numpy().astype(np.float64)
+        T2, inter = FBW["obj"].filter(sim.data, xo, T, FBW["pilot"])
+        FBW["inter"].append(bool(inter)); FBW["viol"].append(FBW["obj"].stats["pred_viol_pilot"][-1]); FBW.setdefault("pfall", []).append(FBW["obj"].stats["pfall"][-1])
+        a = torch.as_tensor(((T2 - FBW["off"]) / FBW["sc"])[None], dtype=a.dtype, device=a.device)
     STATE["step"] += 1
-    return a + noise * torch.randn_like(a) if noise else a
+    out = a + noise * torch.randn_like(a) if noise else a
+    if use_fbw:
+        FBW["pred"] = FBW["obj"].check_prior(self.env.simulator.data, FBW["off"] + FBW["sc"] * out[0].cpu().numpy().astype(np.float64))
+    return out
 
 
 def check(self, active_envs, trial_ids):
@@ -111,6 +138,10 @@ def check(self, active_envs, trial_ids):
 def _wrap_start(fn):
     def on_start(self, env_ids):                               # one evaluation episode per motion (num_envs = 1)
         STATE["episode"] += 1
+        if use_fbw:                                            # the reset teleports the robot: no one-step check across it
+            FBW["pred"] = None
+            if FBW["obj"] is not None:
+                FBW["obj"].reset()
         return fn(self, env_ids)
     return on_start
 
@@ -140,4 +171,8 @@ if __name__ == "__main__":
             np.savez_compressed(uq_out, **{k: np.array(v) for k, v in LOG.items()}, fail_step=STATE["fail_step"],
                                 n_steps=STATE["step"], episode=np.array(EP_AT_STEP),
                                 ep_fail=np.array([[k, v] for k, v in sorted(EP_FAIL.items())]).reshape(-1, 2), noise=noise, seed=seed, gate=json.dumps(gate), student=str(student_path))
+            if use_fbw:
+                print(f"[fbw] steps {len(FBW['inter'])} interventions {sum(FBW['inter'])} prior one-step max|err| "
+                      f"{(max(FBW['err']) if FBW['err'] else float('nan')):.2e} (median {np.median(FBW['err']) if FBW['err'] else float('nan'):.2e})", flush=True)
+                np.savez_compressed(uq_out.replace(".npz", "_fbw.npz"), inter=np.array(FBW["inter"]), viol=np.array(FBW["viol"]), err=np.array(FBW["err"]), pfall=np.array(FBW.get("pfall", [])), pfall_best=np.array(FBW["obj"].stats.get("pfall_best", [])), parts=np.array(FBW["obj"].stats.get("parts", [])), cfg=json.dumps(FBW["obj"].c))
             print(f"[uq] saved {STATE['step']} steps, fail_step={STATE['fail_step']} -> {uq_out}", flush=True)

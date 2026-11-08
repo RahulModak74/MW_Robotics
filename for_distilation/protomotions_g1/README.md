@@ -14,7 +14,7 @@ Video: [`results/video/mw_vs_teacher_dance.mp4`](results/video/mw_vs_teacher_dan
 Training data: the teacher driving the robot on the 4 original ProtoMotions motions (walk, wave, high-five, jumping jacks) plus
 **324 distinct motions generated with NVIDIA's open Kimodo text-to-motion model**, from 500 prepared (125 each of locomotion,
 gestures, exercise and everyday actions; all dance prompts held out). The teacher's rollouts picked motions at random, so they
-reached 324 of the 500; a run that visits all 500 (`PM_ORDER=1` in `ours/pm_collect.py`) is under way. The dance clip is run clean once and with random action noise 0.1 and 0.2 (3 seeds each):
+reached 324 of the 500 (`PM_ORDER=1` in `ours/pm_collect.py` makes the teacher visit every motion). The dance clip is run clean once and with random action noise 0.1 and 0.2 (3 seeds each):
 7 independent runs per policy.
 
 | Policy | Dance clip (7 runs) | under heavy noise (0.2) | 21 unseen familiar motions | 30 unseen generated dances |
@@ -25,7 +25,7 @@ reached 324 of the 500; a run that visits all 500 (`PM_ORDER=1` in `ours/pm_coll
 | Teacher | 7/7 | 3/3 | 21/21 | 30/30 |
 
 * **Per run, with definitions and 95 % intervals: [`results/EVIDENCE.md`](results/EVIDENCE.md).** With 7 runs per policy the dance
-  intervals overlap: MW level 2 matches the teacher; it is not shown to beat the plain MLP. A 10-seed evaluation is running.
+  intervals overlap: MW level 2 matches the teacher; it is not shown to beat the plain MLP.
 * **Only MW level 2 never fell on the dance clip**, including every heavy-noise run, and it tracked the dance most closely (worst
   joint error 0.25 rad vs about 0.40; position error 0.13 m vs 0.27 m).
 * **It warns before it fails.** Its Bayesian uncertainty predicts that the evaluator will record a failure within the next 25 steps
@@ -98,7 +98,7 @@ cd kimodo_data && ~/kimodo/venv/bin/python encode_prompts.py --prompts prompts.j
 ```
 
 `ours/pm_eval_student.py` wraps ProtoMotions' evaluator: `--student`, `--act-noise`, `--seed`, `--uq-out` (per-step uncertainty),
-`--gate S:T` (hand a step to the teacher when signal S exceeds T), `--qpos-out` (for videos). `render_dance.py` needs the real G1
+`--gate S:T` (hand a step to the teacher when signal S exceeds T), `--qpos-out` (for videos), `--fbw` (the physics flight computer, [`../../fly_by_wire/`](../../fly_by_wire/README.md)). `render_dance.py` needs the real G1
 meshes (ProtoMotions' are Git-LFS pointers; set `G1_MESHES`). To take another policy through the same steps:
 [`../../docs/POLICY_TO_PRODUCTION.md`](../../docs/POLICY_TO_PRODUCTION.md).
 

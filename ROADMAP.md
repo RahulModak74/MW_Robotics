@@ -4,7 +4,7 @@
 
 | | Status |
 |---|---|
-| **Part 1: policy distillation, powered by Bayesian methods** | **Working in simulation.** NVIDIA ProtoMotions' Unitree G1 tracker distilled into a 7.7 MB MW policy: unseen dance 7/7 like the teacher (plain MLP 6/7; small n, larger evaluation running), every one of 26 failures across three students warned 0.16–0.96 s ahead, 2.3 ms per step on one laptop CPU thread. [`for_distilation/protomotions_g1/`](for_distilation/protomotions_g1/README.md) |
+| **Part 1: policy distillation, powered by Bayesian methods** | **Working in simulation.** NVIDIA ProtoMotions' Unitree G1 tracker distilled into a 7.7 MB MW policy: unseen dance 7/7 like the teacher (plain MLP 6/7; small n), every one of 26 failures across three students warned 0.16–0.96 s ahead, 2.3 ms per step on one laptop CPU thread. [`for_distilation/protomotions_g1/`](for_distilation/protomotions_g1/README.md) |
 | **Part 2: policy generation, together** | Research. Building blocks in [`for_full_replacement/`](for_full_replacement/README.md); looking for partners |
 
 ## Part 1: from "ready" to "deployed everywhere"

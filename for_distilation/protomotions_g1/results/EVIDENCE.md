@@ -27,8 +27,7 @@ Everything here is MuJoCo simulation, scored by ProtoMotions' own evaluator. Raw
 | **Total (95 % interval)** | 6/7 (0.49 to 0.97) | 5/7 (0.36 to 0.92) | **7/7 (0.65 to 1.00)** |
 
 The clip is 248 steps (about 5 s). **With 7 runs these intervals overlap: the dance result shows that MW level 2 matches the teacher
-(7/7) on an unseen dance; it does not by itself show that MW beats the plain MLP.** A larger evaluation (10 seeds each at noise 0.2
-and 0.3, MLP vs MW, plus students trained on all 500 prepared motions) is running and will be added here.
+(7/7) on an unseen dance; it does not by itself show that MW beats the plain MLP.**
 
 ## Unseen motion sets (one run each, many motions)
 
@@ -72,3 +71,9 @@ AUROC with a 95 % interval from resampling **episodes** with replacement (1000 r
   plus motion generation with Kimodo on the GPU. Not an afternoon's job, but a laptop's. We do not ship weights (they derive from NVIDIA's model); the scripts regenerate them.
 * **The video** ([`video/mw_vs_teacher_dance.mp4`](video/mw_vs_teacher_dance.mp4)) is versioned in git (commit `8a157a1`), SHA-256
   `cda303323f7f1538a165a69c0aabd000a41026f9364b207b00d069a0cc3407ac`; rendered with `scripts/render_dance.py`.
+
+## Fly-by-wire (the 100-motion student + a physics flight computer)
+
+Same exam, same seeds. The student alone: 3/7 on the dance clip (0.16 to 0.75), 17/21, 20/30. With fly-by-wire envelope D: **7/7
+(0.65 to 1.00), 21/21, 30/30**, 0 regressions, and a median tracking cost of +3.8 %. Per run, the design of the envelope and the
+limits: [`../../../fly_by_wire/README.md`](../../../fly_by_wire/README.md).
