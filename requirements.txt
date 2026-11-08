@@ -1,8 +1,10 @@
-numpy>=1.23
-pandas>=1.5
+# Quick start (examples/policy_priors_demo.py) needs only torch.
 torch>=2.0
+numpy>=1.23
+# Step 1 (students and flight computer): also ProtoMotions with its MuJoCo backend and NVIDIA's g1-bones-deploy checkpoint
+# (see step1_extraction/student/README.md), plus:
 pyro-ppl>=1.8
-scikit-learn>=1.1
-matplotlib>=3.5   # optional: plots in examples/
-pytest>=7         # optional: tests
-mujoco>=3.0       # optional, Apache-2.0: mujoco_experiments/ only
+mujoco>=3.1
+imageio[ffmpeg]>=2.30   # videos
+pillow>=10
+# For GPU training install a CUDA build of PyTorch first, e.g. pip install torch --index-url https://download.pytorch.org/whl/cu128

@@ -1,6 +1,6 @@
 # Beyond the teacher: how a student can outgrow the policy it learned from
 
-*Demo: [`for_distilation/protomotions_g1/examples/policy_priors_demo.py`](../for_distilation/protomotions_g1/examples/policy_priors_demo.py)
+*Demo: [`examples/policy_priors_demo.py`](../examples/policy_priors_demo.py)
 (plain PyTorch, CPU, a few minutes).*
 
 ## The baby and the parent
@@ -57,9 +57,9 @@ the prior student exceeds 2° on 21 of 35).
 ## On the humanoid (MW level 3, in progress)
 
 The same laws exist for the Unitree G1, written from its model and checked against MuJoCo
-([`ours/priors.py`](../for_distilation/protomotions_g1/ours/priors.py), [`ours/g1_kin.py`](../for_distilation/protomotions_g1/ours/g1_kin.py),
+([`ours/priors.py`](../step1_extraction/student/ours/priors.py), [`ours/g1_kin.py`](../step1_extraction/student/ours/g1_kin.py),
 kinematics exact to 3e-9 m): capture point inside the support (balance), upright torso, joint limits, follow the reference.
-[`ours/train_student_priors.py`](../for_distilation/protomotions_g1/ours/train_student_priors.py) applies them to the student's own
+[`ours/train_student_priors.py`](../step1_extraction/student/ours/train_student_priors.py) applies them to the student's own
 actions up to 10 steps ahead, including on states the teacher never visited.
 
 What we have learned so far: the laws must be judged with **accurate physics**. In a first strong-prior test on 100 motions the

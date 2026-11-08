@@ -1,9 +1,0 @@
-# Step 1 (for_distilation/) needs the MW core plus a physics engine and an RL library.
-#   pip install -e ..            # mw_framework (torch, pyro-ppl, numpy, pandas, scikit-learn)
-#   pip install -r requirements.txt
-# For GPU training install a CUDA build of PyTorch first, e.g.
-#   pip install torch --index-url https://download.pytorch.org/whl/cu128
-mujoco>=3.1
-gymnasium[mujoco]>=1.0
-stable-baselines3>=2.3
-flask>=3.0

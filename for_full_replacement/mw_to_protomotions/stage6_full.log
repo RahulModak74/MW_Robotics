@@ -1,6 +1,0 @@
-Training the validator on default settings (dt=0.008, Euler) - same as Stage 1...
-baseline false-alarm rate (same settings, held-out rows): 0.8%
-
-default dt, RK4 integrator       flag rate: 17.4%
-2x coarser timestep (0.016)      flag rate: 54.5%
-4x coarser timestep (0.032)      flag rate: 42.7%

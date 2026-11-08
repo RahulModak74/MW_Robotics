@@ -1,6 +1,0 @@
-Fixed held-out test set (fresh seeds, disjoint from all training)...
-n_units=  5  rows=  746  flag_rate=11.6%
-n_units= 10  rows= 1464  flag_rate=11.0%
-n_units= 20  rows= 3038  flag_rate=7.1%
-n_units= 40  rows= 6261  flag_rate=2.4%
-n_units= 80  rows=12395  flag_rate=1.8%

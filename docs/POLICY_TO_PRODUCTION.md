@@ -2,7 +2,7 @@
 
 This is the path we followed for NVIDIA ProtoMotions' Unitree G1 tracker, written so you can follow it for another teacher policy
 or another robot. Every step names the script that does it for the G1
-([`for_distilation/protomotions_g1/`](../for_distilation/protomotions_g1/)).
+([`step1_extraction/student/`](../step1_extraction/student/)).
 
 ```
  0 licence  →  1 teacher in simulation  →  2 motions  →  3 record the teacher  →  4 train MLP + MW  →  5 exam  →  6 warning threshold
@@ -21,7 +21,7 @@ License (derivative models allowed, commercially usable, attribution notice on r
 
 You need to run the teacher, read exactly what it sees, and score any policy with the **teacher's own evaluator** so the exam is
 not ours to bend. For the G1 we run ProtoMotions with its MuJoCo backend on CPU and wrap its evaluator:
-[`ours/pm_eval_student.py`](../for_distilation/protomotions_g1/ours/pm_eval_student.py) (`--student`, `--act-noise`, `--seed`,
+[`ours/pm_eval_student.py`](../step1_extraction/student/ours/pm_eval_student.py) (`--student`, `--act-noise`, `--seed`,
 `--uq-out` for the per-step uncertainty, `--gate` for handing over, `--qpos-out` for videos). Write down the observation layout
 and the action mapping (here: joint target = offset + scale × action) and check them against the simulator.
 
@@ -29,7 +29,7 @@ and the action mapping (here: joint target = offset + scale × action) and check
 
 * **Variety beats volume.** The student must see the space of normal body states, not one skill. We prepared 500 motions generated from
   text prompts, **spread evenly** over four kinds: locomotion, gestures, exercise, everyday actions.
-  ([`kimodo_data/prompts.json`](../for_distilation/protomotions_g1/kimodo_data/prompts.json), `gen_motions.py`)
+  ([`kimodo_data/prompts.json`](../step1_extraction/student/kimodo_data/prompts.json), `gen_motions.py`)
 * **The exam must be unseen.** No dance was in training; the exam is a dance clip, plus 30 unseen generated dances and 21 unseen
   familiar motions.
 * Measured on the G1: no extra motions 0/9 dance runs, 100 random 1/9, 100 evenly chosen 3/7, **324: 7/7**.
@@ -41,7 +41,7 @@ and the action mapping (here: joint target = offset + scale × action) and check
 Run the teacher on the training motions and save every step's *(observation, action)*. The executed action gets some **noise**
 (0 to 0.2, cycling per episode) while the recorded label stays the teacher's clean action, so the data also shows how the teacher
 recovers from small mistakes. Collection runs on CPU cores, one process per motion shard.
-([`ours/pm_collect.py`](../for_distilation/protomotions_g1/ours/pm_collect.py), `scripts/run_collect.sh`, stage `collect` of `kimodo_data/m500.sh`)
+([`ours/pm_collect.py`](../step1_extraction/student/ours/pm_collect.py), `scripts/run_collect.sh`, stage `collect` of `kimodo_data/m500.sh`)
 
 ## 4. Train a plain MLP and the MW policy, on the same data
 
@@ -75,7 +75,7 @@ The MW policy reports per step its **uncertainty** and its **distance to the man
 ## 7. Decide what happens when it warns
 
 The warning is only useful if something takes over. Options, from simplest: hold the current posture and slow down; switch to a
-classical balance controller (PD / LQR; examples in [`for_full_replacement/`](../for_full_replacement/)); hand the step to the
+classical balance controller (PD / LQR; examples in the [archive](https://github.com/RahulModak74/MW_Robotics/tree/archive/pre-fbw/for_full_replacement)); hand the step to the
 teacher if it is available on board (`--gate S:T` in `pm_eval_student.py` tests exactly this); stop safely. Test the handover in
 simulation like any other policy.
 

@@ -21,3 +21,15 @@ old_content/full_flow_2d_demo/checkpoints/
 
 # cached teacher (s,a) data for student experiments
 for_distilation/data_cache/
+
+# local leftovers from before the restructure (kept on disk, not in the repo; see the archive/pre-fbw tag)
+domain/
+full_flow_animation/
+mw_g1_racer/
+mw_to_protomotions/
+for_full_replacement/
+for_distilation/
+mujoco_experiments/
+mw_framework/
+tests/
+step1_extraction/flight_computer/results_runs/

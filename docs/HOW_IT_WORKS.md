@@ -1,7 +1,7 @@
 # How a teacher policy becomes an MW manifold policy
 
-*Plain-words version. Code: [`for_distilation/protomotions_g1/ours/student_prob.py`](../for_distilation/protomotions_g1/ours/student_prob.py)
-(`MWBundleV2`, `LastLayer`) and [`train_student_prob.py`](../for_distilation/protomotions_g1/ours/train_student_prob.py).*
+*Plain-words version. Code: [`step1_extraction/student/ours/student_prob.py`](../step1_extraction/student/ours/student_prob.py)
+(`MWBundleV2`, `LastLayer`) and [`train_student_prob.py`](../step1_extraction/student/ours/train_student_prob.py).*
 
 ## 1. A policy is just a function
 
