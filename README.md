@@ -42,7 +42,7 @@ motions; 30 unseen generated dances.
 | MW level 2 (324 motions), alone | 7/7 (0.65–1.00) | 20/21 | 24/30 | 0.996 (0.992–0.999) |
 | MW level 1: Bayesian action head only (324 motions) | 5/7 (0.36–0.92) | 19/21 | 27/30 | 0.992 (0.978–1.000) |
 | Plain MLP (324 motions) | 6/7 (0.49–0.97) | 18/21 | 26/30 | none of its own |
-| Teacher (NVIDIA) | 7/7 | 21/21 | 30/30 | – |
+| Teacher (NVIDIA) -142,000 motions| 7/7 | 21/21 | 30/30 | – |
 
 * **58/58 with zero regressions.** The flight computer rescued all 18 tests the student failed alone and broke none that it passed.
   The student was not retrained. The flight computer's model matched the simulator to at most 1e-7 per step on every run.
