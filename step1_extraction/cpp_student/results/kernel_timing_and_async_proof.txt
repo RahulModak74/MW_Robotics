@@ -1,0 +1,61 @@
+ASYNC-IN-C++ — the correction search off the 20 ms heartbeat, with the GIL-free kernel.
+Machine: i5-12450H, governor=performance (cores boost to 4.40 GHz). venv_pm, torch 1 thread, FBW_THREADS=6.
+
+CONTEXT — full-clock kernel timing (cpp/, exact mode, verified bit-identical to fbw.py 1e-10):
+  mj_step floor            : 31.7 us/step   (400-step quiet look-ahead = 12.7 ms)
+  quiet tick               : ~13 ms          -> MEETS 20 ms in-loop
+  exact correction (idle)  : ~260 ms (6 thr) -> OVER 20 ms, must go async
+  [throttled 0.8 GHz these were 2x: 62 us, 32 ms quiet, 1871 ms correction single-thread]
+
+PROOF (async_cpp_proof.py, exercise_009_04, real-time paced 20 ms/step):
+  C++ correction solve        : 370 ms
+  latency submit->land        : 375 ms = 18 control steps @20ms
+  HEARTBEAT while worker busy  : n= 18  median= 2.23  p99= 2.76  MAX=  2.77 ms
+  HEARTBEAT idle               : n=102  median= 1.19  p99= 2.06  MAX=  2.27 ms
+  => main loop max during busy window < 20 ms  PASS
+
+WHAT THIS SHOWS
+  * The Python control heartbeat NEVER exceeds ~2.8 ms while 6 C++ threads run the 370 ms search.
+    This is real parallelism, not GIL-interleaving: fbw_kernel.cpp releases the GIL
+    (py::gil_scoped_release) for the whole rollout, so the worker does not block the loop.
+  * First-solve latency: ~18 control steps (~0.37 s), vs ~185 steps (~3.7 s) for the Python fbw
+    worker. The 18 rescue warning leads measured 26-200 steps (results/COM_WARNING/RESULTS.txt),
+    so a ~18-step correction lands INSIDE most of them, where the 185-step one did not.
+
+WHAT THIS DOES NOT CLAIM
+  * The correction is still NOT an in-loop 20 ms result — it is async and arrives ~18 steps late,
+    decayed by age when applied. 58/58 with EVERY tick (incl. the rescue) under 20 ms does not exist
+    with the exact model (README: 63x400 ~= 25k physics steps ~= 0.26 s even at full clock).
+  * The pass-rate at 18-step latency is not re-measured here. The honest next step is to re-run the
+    18-rescue async pass-rate with this worker (prior Python async: 2/18 -> 42/58). Expectation up,
+    because latency fell ~10x and now sits inside most leads — but it must be measured, not assumed.
+
+NOTES
+  * FBW_THREADS: keep modest. The quiet tick is a single sequential rollout and does not parallelize;
+    many threads only add overhead and oversubscribe vs the main thread.
+  * Under a live heartbeat the solve was ~370 ms vs ~260 ms idle — the main thread's 20 ms slice and
+    scheduling cost ~40%. Still 18 steps, still inside most leads.
+
+================================================================================
+*** SUPERSEDED BY MEASURED_RESIM.txt — the estimate below did NOT survive re-simulation. ***
+*** Measured async-C++ on dev-20 = 3/20 (= act-only); sync-C++ = 6/20. The 54/58 estimate   ***
+*** assumed landing==rescue; re-sim shows landed corrections still fall. 54/58 RETRACTED.    ***
+================================================================================
+18-RESCUE PASS RATE (lead_time_cpp.py) — ESTIMATE ONLY, disproven by MEASURED_RESIM.txt
+  Criterion (same as ../ASYNC_APPROACH): rescue SAVED iff solve_latency < warning_lead.
+  Lead is student dynamics (fixed). cpp_solve = recorded python_solve / 4.5 (measured speedup).
+
+  python worker (~3.7 s solves): 2/18 saved -> 42/58
+  C++ worker    (4.5x, measured): 14/18 saved -> 54/58   <-- main loop <20 ms throughout
+  C++ worker    (8x, if noise-collapse): 17/18 -> 57/58  (deterministic look-ahead upper side)
+
+  The 4 that stay late at 4.5x have SHORT leads (520-1620 ms = 26-81 steps): kdance e12, e25,
+  kfamiliar e5, e6. The fall commits faster than even a ~0.9 s correction can arrive. These are
+  genuine sub-latency falls — no async latency reduction fixes them; only a faster solve (fast-mode,
+  unproven) or stepping authority would.
+
+  CAVEAT: SAVE = the correction LANDS before the fall (necessary condition, the same optimistic
+  criterion as the 2/18 baseline). It is an estimate from measured speedup x recorded per-rescue
+  leads/solves, NOT a re-simulated pass count. To NAIL it, re-simulate each rescue with the
+  correction applied at the C++ latency (integrated_gate-style, exam states). Expect <= 54/58.
+================================================================================

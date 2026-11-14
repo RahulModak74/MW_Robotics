@@ -22,7 +22,8 @@ per step whether the flight computer passed the pilot's command through or corre
   about 20 % of steps. It trades a little tracking for balance.
 * **Limits, stated plainly:** simulation only; one student; one run per motion library. The model is the simulator itself, and
   the flight computer reads the true state. It runs on CPU but **not yet in real time**: about 0.16 s per step when it lets the pilot
-  through and about 3 s when it corrects, against a 20 ms control step. Next: real-time CPU, other students, stronger disturbances,
+  through and about 3 s when it corrects, against a 20 ms control step. The work on speed is in
+  [`../cpp_student/`](../cpp_student/README.md). Next: real-time CPU, other students, stronger disturbances,
   a deliberately degraded robot with an inexact model, then hardware.
 
 Per-run numbers: [`results/SUMMARY_fbw_runs.md`](results/SUMMARY_fbw_runs.md); tracking cost per test:

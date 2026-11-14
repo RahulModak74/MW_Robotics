@@ -1,0 +1,3 @@
+fbw_kernel*.so
+results_runs/
+__pycache__/

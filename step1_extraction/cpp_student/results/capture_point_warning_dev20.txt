@@ -1,0 +1,35 @@
+thr=0.0136 margin=0.03 ttf_ms=200.0   (leads/steps; solve ms = ONE fbw.filter at that trigger)
+
+clip                   fall   mw  com union leadMW leadU solveMW  solveU  lands?
+everyday_002_00.motion  175   93  131    93     82    82    4041    4189  intervene  no
+everyday_016_01.motion  198  173  114   114     25    84    3537    3930  intervene  no
+everyday_021_01.motion  137   71   20    20     66   117    3517    3896  intervene  no
+everyday_033_05.motion  143    6   31     6    137   137    4137    4312  intervene  no
+everyday_041_02.motion    -  130  130   130      -     -    3807    3484  intervene  no
+everyday_053_00.motion  264  159   48    48    105   216    3269     106      no-op  lands-empty
+everyday_068_04.motion    -    -    -     -      -     -     nan     nan      no-op  no
+gesture_001_00.motion     -  199  123   123      -     -    3367      94      no-op  no
+gesture_007_01.motion   316  165  156   156    151   160    3185      95      no-op  lands-empty
+gesture_024_00.motion    63   11   26    11     52    52    3733    3689  intervene  no
+gesture_033_03.motion    62    4   22     4     58    58    3615    3738  intervene  no
+gesture_055_00.motion   290  143  224   143    147   147    3772    3824  intervene  no
+gesture_064_01.motion   285  248  184   184     37   101    3464    3962  intervene  no
+gesture_074_03.motion    44    8   14     8     36    36     105     102      no-op  lands-empty
+exercise_001_00.motion  154   38   75    38    116   116    4190    4748  intervene  no
+exercise_009_04.motion   65    3   25     3     62    62    3794    3777  intervene  no
+exercise_022_01.motion    -    -    -     -      -     -     nan     nan      no-op  no
+exercise_036_00.motion   90    7   17     7     83    83    3968    3956  intervene  no
+exercise_057_01.motion  189   59  117    59    130   130      98     100      no-op  lands-empty
+exercise_074_00.motion   77   12    0     0     65    77    3553    3670  intervene  no
+
+========================================================================
+clips where the student fell: 16
+warn_com fired EARLIER than warn_mw on: 6/16 fallen clips
+solve_ms @ MW trigger   : median 3584  min 98  max 4190
+solve_ms @ UNION trigger: median 3800  min 95  max 4748   (cheaper? ~same => NO)
+union-trigger solve LANDS before fall: 4/16  --  of which carry a REAL correction (intervene): 0/16
+
+VERDICT: fbw's solve is BIMODAL -- ~100ms no-op (no correction) OR ~3.7s real search (too late).
+A cheap solve that lands is an EMPTY correction; a real correction always costs ~3.7s and never lands.
+=> warn_com adds 0 useful rescues. Firing earlier does not find a 'cheap real correction' -- that regime
+   does not exist on this fbw config. The binding constraint is search cost, not warning lead (confirms PART1).

@@ -9,7 +9,9 @@ Welcome. The most useful things you could add:
    hardware, especially consumer GPUs and plain CPUs. Open an issue with your setup and numbers, good or bad.
 3. **Physics priors and fortified policies** (Step 2, [`step2_policy_design/`](step2_policy_design/README.md)): new laws, new robots, teams with GPUs who want
    to train with priors in the loop.
-4. **Honest failures:** a case where MW loses to a plain MLP teaches more than a case where it wins. Add it to
+4. **The open problem:** 58 of 58 inside the 20 ms control step. Ideas, cheap first tests and how to report a result:
+   [`step1_extraction/cpp_student/OPEN_PROBLEM.md`](step1_extraction/cpp_student/OPEN_PROBLEM.md).
+5. **Honest failures:** a case where MW loses to a plain MLP teaches more than a case where it wins. Add it to
    [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
 
 Before a pull request:

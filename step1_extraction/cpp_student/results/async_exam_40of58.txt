@@ -1,0 +1,52 @@
+EXAM RE-SIM ON THE REAL 58 (pm_eval_fbw2.py --fbw2 + FBW_ASYNC=1, i5-12450H @ performance)
+This is the faithful number the dev-20 re-sim (MEASURED_RESIM.txt) could only approximate: the
+async latency model ported INTO the real exam harness, config D search (N64/S4/H20), the real
+MuJoCo physics and ProtoMotions' own fall detector deciding survival. Not an estimate.
+
+MODEL (faithful port of results/ASYNC_APPROACH/integrated_gate.py into pm_eval_fbw2.py):
+  each fbw correction is applied L = ceil((solve_ms/speedup)/20ms) control steps LATE (one search
+  in flight), blended onto the then-current student torque and decayed by age:
+      T = T_student + w(age)*(T_fbw - T_student),  w = 1 - age/max_age
+  speedup=4.5 (measured C++ kernel), k_refresh=7, max_age=20.  D solves ~1200 ms median => L~14.
+  CORRECTNESS ANCHOR: the same wrapper at latency=zero preserves a rescue (dance n0.2/s0, success
+  1.000) — so any fall below is real staleness, not a harness artifact.
+
+RESULT:
+  config                                    score     note
+  student alone (no fbw)                     40/58    baseline
+  fbw_2 synchronous (NOT real-time)          58/58    rescues all 18, but blows 20 ms on rescue ticks
+  fbw_2 ASYNC-C++  (L~14, k7, max20)         40/58    <20 ms heartbeat, but nets ZERO rescues
+
+PER-EPISODE (why 40, not higher):
+  of the 18 rescues, async SAVED  3  (heldout_kdance ep10, ep20 ; heldout_kfamiliar ep15)
+  the stale correction NEW-BROKE  3  (heldout_kdance ep2, ep24, ep27 — passed alone, fell under async)
+  net = 40 + 3 - 3 = 40/58  ==  student-alone, exactly.
+  dance: 0/4 rescues saved (n0.1/s0, n0.2/s0, n0.2/s1, n0.2/s2 all still fall).
+
+READING IT:
+  * A 14-step-stale joint-delta correction does not rescue these falls. It is not merely useless —
+    it CHURNS: it saves 3 and causes 3, canceling to the do-nothing baseline. The correction
+    REPRESENTATION (a point-in-time joint offset applied 14 steps later) is the binding problem.
+  * Cutting latency 185 -> 14 steps did NOT help: the dev-20 python-async was 3/20, C++-async 3/20,
+    and here on the full exam async = alone. Latency was never the constraint; staleness is.
+  * The trade is stark and now measured both ways:
+      - synchronous fbw_2: 58/58, but the rescue tick is ~260-370 ms (13-18x over 20 ms).
+      - async C++:         <20 ms every tick (0% over, proven), but 40/58 (= no net rescue).
+    You cannot currently have both with this correction form.
+
+WHAT SURVIVES, UNCHANGED:
+  * <20 ms heartbeat on every tick, 0% over budget — real-time guarantee holds (async_cpp_proof.py).
+  * the C++ kernel is bit-exact vs fbw.py, 4.5x faster, GIL-free, latency 185 -> ~14 steps.
+
+WHAT IS RETRACTED / SETTLED:
+  * 54/58 and 57/58 (lead_time_cpp.py landing estimate): RETRACTED. Measured exam = 40/58.
+  * The real-time version of this teacherless+student stack, as built, scores 40/58 — the same as
+    the student alone. Real-time: solved. Real-time WITH the 18 rescues: NOT solved by async of a
+    stale joint-delta. It needs a correction that stays valid under ~14-step latency (e.g. a
+    policy/residual the student rolls forward itself, or stepping authority), not a frozen offset.
+
+REPRODUCE:
+  FBW2_TAG=_async FBW_ASYNC=1 FBW_ASYNC_LAT=sim FBW_ASYNC_SPEEDUP=4.5 \
+    FBW_ASYNC_KREFRESH=7 FBW_ASYNC_MAXAGE=20 FBW_THREADS=6 \
+    bash protomotions_g1_distillation/scripts/fbw2_run.sh all
+  (writes eval_prob/fbw2_async/ ; the async wrapper is in ours/pm_eval_fbw2.py, flag-gated, default off)

@@ -1,0 +1,39 @@
+MEASURED RE-SIM (resim_cpp.py, dev-20, i5-12450H @ performance, FBW_THREADS=6)
+This supersedes the lead_time_cpp.py ESTIMATE. The estimate assumed "correction lands before
+fall" == rescue. Re-simulation (correction actually injected at the C++ latency, survivals counted)
+refutes that. Numbers below are counted survivals, not landings.
+
+  configuration                                   pass    heartbeat
+  act_track-only (no fbw)                          3/20    <20ms
+  fbw_2 synchronous (reference, prior python)      9/20    (not real-time)
+  --- this harness, C++ kernel ---
+  sync   (base=student latency=zero)               6/20    max 8.9 ms, 0% over 20
+  ASYNC  (base=student latency=sim k7 max_age20)   3/20    max 7.8 ms, 0% over 20
+
+TWO gaps, both real:
+  1. HARNESS gap: sync-C++ here = 6/20 vs the fbw_2 reference 9/20. This harness's gate/blend
+     (latch/calm + base=student + delta) does NOT reproduce the canonical fbw_2 D config (likely a
+     config mismatch: fbw weights / w_z / noise). So dev-20 here is NOT a faithful proxy for the
+     58-exam fbw_2 run — it undercounts even synchronously.
+  2. STALENESS gap: ASYNC 3/20 vs sync 6/20. Even at ~12-step (~240 ms) landing latency, the
+     correction is a point-in-time joint delta that goes stale before it can hold the recovery.
+     Lowering latency 185 -> 12 steps did NOT raise the pass rate: python async was also 3/20.
+     The binding constraint on these falls is correction STALENESS, not just search latency.
+
+CONSEQUENCE FOR THE 58 CLAIM:
+  * The 54/58 (and 57/58) from lead_time_cpp.py are NOT supported by measurement. They were a
+    landing-criterion estimate; re-simulation shows landed corrections still fall. RETRACTED as a
+    result; kept only as the optimistic upper bound the measurement disproved.
+  * What survives measurement, unchanged and strong:
+      - <20 ms heartbeat on every tick, 0% over budget (real-time guarantee holds)
+      - the C++ kernel is bit-exact vs fbw.py, 4.5x faster, GIL-free, latency 185 -> ~15 steps
+  * The TRUE 58-exam async number is still unknown. It requires the real exam harness
+    (pm_eval_fbw2.py) with (a) FlyByWireCpp and (b) the fbw_2 correction delayed by L steps, run on
+    the exam motions. Given the staleness finding, expect async < the 58/58 synchronous by a
+    non-trivial margin — the re-sim must measure it, not estimate.
+
+HONEST ONE-LINER:
+  C++ async guarantees the <20 ms heartbeat and makes the search land in time, but a stale joint-delta
+  correction does not rescue these falls the way a fresh (synchronous) one does. Real-time: solved.
+  58/58 under <20 ms: not demonstrated; the correction representation (not its latency) is now the
+  binding problem.

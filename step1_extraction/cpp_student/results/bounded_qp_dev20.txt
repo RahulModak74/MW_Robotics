@@ -1,0 +1,77 @@
+hard_guarantee — bounded surrogate MW gate, measured on 20 dev clips
+(this machine, CPU, torch 1 thread, r7c student; run hard_guarantee.py to reproduce)
+
+APPROACH: MW trigger (student epi) as before, but on a warning hand to the inverse-dynamics
+pilot QP (invdyn_pilot.act_track) — one bounded QP solve, capture-point CoP correction built in,
+NO MuJoCo physics rollout. Follow-through hand-back (hold until epi quiet for `calm` steps).
+
+================= TIMING (the question: can we get < 20 ms?) =================
+                      fbw_2 (physics look-ahead)   hard_guarantee (surrogate QP)
+  gated step  median        ~140 ms                        6.83 ms      (~20x faster)
+  gated step  p99            (seconds tail)                29.75 ms
+  gated step  max            6753 ms                       41.71 ms
+  hands-off   median         ~1.6 ms                        3.41 ms
+  all-steps   median          -                             4.07 ms
+  steps > 20 ms budget        most gated steps              1.68 %   (max 41.7 ms)
+
+=> TYPICAL case solved: the median gated step drops 140 ms -> 6.8 ms (20x), median overall 4 ms,
+   with NO C/C++ — pure algorithm (bounded QP instead of unbounded physics search).
+=> HARD 100%-under-20ms guarantee: NOT yet — a ~1.7% tail of gated steps spikes to ~40 ms
+   (act_track QP worst-case, on the clips that gate 80-96% of steps). Needs the QP bounded
+   (cap solver iterations / warm-start) OR the pure analytic capture-point correction (no QP).
+
+================= CAPABILITY (does it still rescue?) =================
+  PASS RATE:  hard_guarantee 3/20     vs   fbw_2  B 9/20   (same clips, same student)
+    passed: everyday_068_04, gesture_055_00, exercise_022_01
+    lost vs fbw_2: 016, 033, gesture_007, exercise_057 (fbw's physics SEARCH saved these;
+                   the bounded act_track recovery does not)
+
+=> There is a speed/capability trade: the bounded recovery is ~20x faster but rescues fewer
+   clips than fbw's physics search. act_track hits the same ankle-authority wall and the abrupt
+   student->pilot switch mid-motion is less graceful than searching AROUND the student's plan.
+
+================= READING =================
+<20 ms is achievable, and C/C++ is NOT the lever (the 140 ms was MuJoCo physics, already C;
+replacing the rollout with a bounded QP is what buys the 20x). Two refinements make it a
+hard, capable real-time gate:
+  (a) BOUND the recovery compute: cap the QP iterations -> removes the 40 ms tail -> hard <20 ms.
+  (b) KEEP fbw's capability within budget: budget-capped ("anytime") fbw — run the physics
+      search but return best-so-far at an 18 ms deadline — instead of replacing it with act_track.
+  (c) Longer term, the lost clips are the ankle-authority wall (CAM/stepping, PLAN_2 v3), which
+      no gate speed-up addresses.
+
+================= UPDATE 2026-11-11: the HARD <20ms guarantee (0% over budget) =================
+The original bundle above still had ~1.7% of steps over 20ms (max 41.7ms) — not a hard guarantee.
+Diagnosed and fixed:
+
+WHERE the tail came from (profiled, not guessed):
+  - It is the whole-body QP solve (scipy lsq_linear, bvls) inside act_track, NOT the student, NOT
+    MuJoCo assembly (that "rest" is a rock-stable <4ms).
+  - It is driven by PROBLEM SIZE, not iteration count: corr(step_ms, cols)=0.62 vs
+    corr(step_ms, nit)=0.21; bvls only ever used 2-11 iterations (nowhere near its 500 cap -> that
+    is why an iteration cap did NOTHING: qp_iters 500/40/25/15 all still spiked to ~42ms).
+  - On states where BOTH feet are flat with many sole contacts, the contact-force variables nc
+    balloon: the QP matrix goes from ~57 cols (nc~22) to 137 cols (nc~102), and that one solve
+    takes 20-46ms.
+
+THE FIX: cap contact points per stance foot (max_cpf) -> bounds nc -> bounds the QP -> bounds the
+  worst-case step. One guard in invdyn_pilot.act_track's G/contact loop; exposed as --max-cpf.
+
+MEASURED over the 20 dev clips (same student r7c, follow-through gate):
+  max_cpf   all-steps max   p99      steps>20ms        pass
+  99 (old)   41.7 ms       24.2 ms    1.68 %           3/20     <- NOT a guarantee
+   4          14.5 ms      10.6 ms    0.00 %           3/20     <- holds
+   3           9.8 ms       7.0 ms    0.00 %           3/20     <- DEFAULT (half the budget, jitter margin)
+   2           8.6 ms       6.6 ms    0.00 %           3/20     <- holds
+
+=> HARD <20ms GUARANTEE NOW HOLDS: default max_cpf=3 -> worst step ~10ms, 0% over 20ms, and the
+   pass rate is UNCHANGED (3/20) -- the cap costs no capability, it only bounds compute.
+
+RESIDUAL (honest): this is the ALGORITHMIC bound. A single step can still be delayed by OS-level
+  jitter (one 579ms outlier appeared once under system load) -- that is a real-time-scheduling
+  concern (thread pinning / RT priority / no-GC), not an algorithm one, and is separate from this.
+
+STILL OPEN (the OTHER half of the goal): pass rate is 3/20, not 58/58. That gap is the ankle-
+  authority wall (the gated recovery cannot create arm/leg authority those clips need), NOT a
+  timing problem. Closing it = CAM/stepping (PLAN_2 v3), and it must stay inside this same 20ms
+  budget -- fbw's physics SEARCH (74ms-6s/step, measured) cannot, so it is ruled out for runtime.

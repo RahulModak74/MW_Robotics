@@ -1,7 +1,15 @@
 # MW Robotics (MW: Modak-Walawalkar)
 
-**An 8 MB student policy that runs on any CPU, plus a physics flight computer that keeps it from falling. On NVIDIA's tests
-the pair completes 58 of 58, as NVIDIA's own teacher does.\***
+**An experimental, GPU-free approach to robot control: replacing data policies with physics policies.**
+
+Today's best humanoid controllers are data policies: very large networks trained on enormous motion libraries in GPU data
+centres. We are trying a different route. Keep the policy small enough for any CPU, write down the physics the robot must obey
+(balance, capture point, torso upright), and let that physics do the safety work at run time. The policy and its flight computer need no GPU to run.
+
+**Where it stands, in simulation: an 8 MB student policy plus a physics flight computer completes 58 of 58 of NVIDIA's tests, as
+NVIDIA's own teacher does.\*** The flight computer is not yet fast enough for a real robot. Our near-real-time version completes 50 of
+58, and closing that gap is an open problem that we are publishing unfinished, so that you can try:
+[`step1_extraction/cpp_student/`](step1_extraction/cpp_student/README.md).
 
 [![Student alone (left) falls; the same student + fly-by-wire (right) finishes](step1_extraction/flight_computer/results/video/fbw_D_dance_rescues.jpg)](step1_extraction/flight_computer/results/video/fbw_D_dance_rescues.mp4)
 
@@ -12,7 +20,19 @@ it. [Video](step1_extraction/flight_computer/results/video/fbw_D_dance_rescues.m
 | | What | Status |
 |---|---|---|
 | **Step 1: Bayesian policy extraction** ([`step1_extraction/`](step1_extraction/)) | A large policy (NVIDIA ProtoMotions' G1 tracker) → a small Bayesian student that runs on any CPU and knows when it is unsure → a physics flight computer that keeps it inside the balance envelope | **Done, in simulation: 58/58** |
-| **Step 2: CPU-compatible policy design** ([`step2_policy_design/`](step2_policy_design/README.md)) | Policies designed from scratch with Bayesian priors about the hardware, trained on a consumer GPU, timed on a CPU; new bodies | **Plan, not yet a result** |
+| **Step 1b: the C++ student** ([`step1_extraction/cpp_student/`](step1_extraction/cpp_student/README.md)) | The same protection inside the robot's 20 ms control step: the student's uncertainty as a gate, and the look-ahead in C++ | **Open problem: 58/58 when slow, 50/58 when fast. Come and try** |
+| **Step 2: CPU-compatible policy design** ([`step2_policy_design/`](step2_policy_design/README.md)) | Policies designed from scratch with Bayesian priors about the hardware, with no teacher; new bodies | **Plan, not yet a result** |
+
+**What "GPU-free" means here, exactly.** At run time everything is CPU: the student, the flight computer and the tests.
+Preparing the student (generating motions, recording the teacher, training) is a gaming-laptop job. The teacher we distil from
+was trained by NVIDIA on GPUs; we do not retrain it. Removing the teacher as well is Step 2, and it is not done.
+
+## An invitation
+
+You do not need a lab, a robot or a GPU to work on this. A laptop, MuJoCo and curiosity are enough. We have written down what we
+measured, including what failed, and ten ideas we have not had time to try, each with a cheap first test:
+[`OPEN_PROBLEM.md`](step1_extraction/cpp_student/OPEN_PROBLEM.md). If one of them works, or if you see what we are missing, open
+an issue. A clear negative result is just as welcome.
 
 ## How it works
 
@@ -42,7 +62,7 @@ motions; 30 unseen generated dances.
 | MW level 2 (324 motions), alone | 7/7 (0.65–1.00) | 20/21 | 24/30 | 0.996 (0.992–0.999) |
 | MW level 1: Bayesian action head only (324 motions) | 5/7 (0.36–0.92) | 19/21 | 27/30 | 0.992 (0.978–1.000) |
 | Plain MLP (324 motions) | 6/7 (0.49–0.97) | 18/21 | 26/30 | none of its own |
-| Teacher (NVIDIA) -142,000 motions| 7/7 | 21/21 | 30/30 | – |
+| Teacher (NVIDIA), trained on 142,000 motions | 7/7 | 21/21 | 30/30 | – |
 
 * **58/58 with zero regressions.** The flight computer rescued all 18 tests the student failed alone and broke none that it passed.
   The student was not retrained. The flight computer's model matched the simulator to at most 1e-7 per step on every run.
@@ -61,7 +81,22 @@ motions; 30 unseen generated dances.
 \* **Limits, stated plainly.** Simulation only. One student with the flight computer so far; one run per motion library. The
 flight computer's model is the simulator itself, and it reads the true state. It runs on CPU but **not yet in real time**: about
 0.16 s per step when it lets the student through and about 3 s when it corrects. Next, to make the claim watertight: real-time
-CPU (target ≤ 30 ms), other students, stronger disturbances, a deliberately degraded robot with an inexact model, then hardware.
+CPU, other students, stronger disturbances, a deliberately degraded robot with an inexact model, then hardware.
+
+## The road to real time (the C++ student)
+
+The robot needs a decision every 20 ms. What we have measured so far, same 58 tests, same student, one run each:
+
+| Version | Score | Time per decision |
+|---|---|---|
+| Flight computer on every step | 58/58 | about 0.16 s to approve, about 3 s to correct |
+| The student's own uncertainty decides when the flight computer acts | 58/58 | median 2.6 ms; 78.7 % of steps within 20 ms; the rest take seconds |
+| The same, with a cheaper search | 50/58 | 82 % of steps within 20 ms; the rest up to about 0.3 s in Python |
+| The search running in the background, its answer arriving late | 40/58 | every step under 20 ms |
+
+The look-ahead now also runs in C++, with the student's weights inside it: the same decisions as the Python version, about
+4.5 times faster (a full correction in about 0.26 s on a laptop). That is still 13 control steps. What we learned, the code and
+the ideas still open: [`step1_extraction/cpp_student/`](step1_extraction/cpp_student/README.md).
 
 ## Verify it
 
@@ -85,6 +120,7 @@ generate them; and the **attribution** you must ship. Step by step: [`docs/POLIC
 step1_extraction/
   student/            the small Bayesian student: collect teacher rollouts, train (MLP / Bayesian head / manifold), evaluate
   flight_computer/    the MW fly-by-wire: fbw.py, the 58-test protocol, tracking analysis, results and video     <- start here
+  cpp_student/        towards real time: the uncertainty gate, the C++ look-ahead kernel, experiments, the open problem
 step2_policy_design/  CPU-compatible policy design (plan) and the teacher-free pieces that exist
 docs/                 how it works, designing the envelope, policy to production, beyond the teacher, limitations
 examples/             pendulum demo: physics priors in training (minutes, any CPU)
@@ -117,12 +153,13 @@ python examples/policy_priors_demo.py 0,1,2,3,4
 
 ## Why we build it this way
 
-Small policies on ordinary CPUs, with physics doing the safety work, so that robots do not need closed runtimes, licence
-servers or hardware only a few can buy. We use whatever compute is at hand, including the consumer GPUs most teams already own;
-our stance on GPUs is pragmatic, not dogmatic.
+Most of the world's engineers and students do not have a GPU cluster. They have a laptop. If good robot control needs only a
+small policy and the laws of physics, then anyone with a laptop can study it, improve it and build on it, with no closed
+runtimes, licence servers or hardware that only a few can buy. That is who this repository is for. We use whatever compute is at
+hand, including the consumer GPUs many teams already own; our stance on GPUs is pragmatic, not dogmatic.
 
 ## Join in
 
-Reproductions (successful or not), new policies with licences that allow it, new robots and honest failures:
+Reproductions (successful or not), attempts at the [open problem](step1_extraction/cpp_student/OPEN_PROBLEM.md), new policies with licences that allow it, new robots and honest failures:
 [`CONTRIBUTING.md`](CONTRIBUTING.md). Research code; simulation results only; not a safety system. Apache-2.0 ([`LICENSE`](LICENSE));
 please cite [`CITATION.cff`](CITATION.cff).

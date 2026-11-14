@@ -1,0 +1,43 @@
+TWO-ENVELOPE (soft=0.6) — raw measured numbers. i5-12450H @ performance, venv_pm, torch 1 thread.
+Student r7c (r7c_mwv3ctl_s100.pt). Cheap search N16/H15/S2. Synchronous, in-loop, MW-gated.
+
+FULL 58 EXAM (per config):
+  env__dance__n0__s0                 1/1   gate 0.331
+  env__dance__n0.1__s0               1/1   gate 0.508
+  env__dance__n0.1__s1               1/1   gate 0.387
+  env__dance__n0.1__s2               1/1   gate 0.581
+  env__dance__n0.2__s0               1/1   gate 0.851
+  env__dance__n0.2__s1               0/1   gate 0.879   <- the single violent fall the cheap search misses
+  env__dance__n0.2__s2               1/1   gate 0.919   <- recovered by the soft envelope (binary gate lost it)
+  env__heldout_kfamiliar__n0__s0    20/21  gate 0.121
+  env__heldout_kdance__n0__s0       24/30  gate 0.150
+  ---------------------------------------------------
+  TWO-ENVELOPE soft=0.6 SYNC: 50/58
+  per-tick t_fbw (python): p50 0.0 ms  p99 195 ms  max 335 ms ; within20ms 0.823
+    (C++ kernel ~4.5x: p99 ~43 ms, max ~74 ms)
+
+COMPARISON (same cheap search, full 58):
+  student alone .................... 40/58
+  async C++ (stale correction) ..... 40/58   (<20 ms every tick, 0% over; zero net rescue)
+  binary gate (full at threshold) .. 50/58   dance 5/7  kfam 19/21  kdance 26/30
+  two-envelope soft=0.6 ............ 50/58   dance 6/7  kfam 20/21  kdance 24/30
+  sync full search (not real-time) . 58/58   (260 ms/tick)
+
+DANCE SMOKE (7 episodes, soft-strength sweep):
+  binary ........................... 5/7
+  envelope soft 0.6 ................ 6/7   best fixed value
+  envelope soft 0.618 (1/phi) ...... 5/7   flips n0.1/s0 (lives entirely in soft regime)
+  hard overdrive 1.8x .............. 4/7   over-corrects, breaks n0.1/s0
+
+MW DEFINITE-PROBLEM THRESHOLD (student-alone r7c, 58 eps, epi signal):
+  thr 0.0136: precision 0.50  recall 1.00  median runway 96 steps
+  thr 0.025 : precision 0.94  recall 0.94  median runway 15 steps
+  thr 0.030 : precision 1.00  recall 0.78  median runway 13 steps  (0 false alarms on 40 pass eps)
+
+TAKEAWAYS:
+  * Synchronous in-loop (MW-triggered) beats async by +10 rescues (50 vs 40). Staleness, not
+    latency, was the async killer; firing the correction the instant MW flags removes it.
+  * The envelope redistributes rescues (soft force helps dance+kfam, churns 2 on kdance) but nets
+    the same 50/58 as the binary gate at this search size. Binding constraint = search strength.
+  * Not yet hard-real-time: 82% of ticks <20 ms, but gated ticks ~43 ms p99 in C++. Next: shrink
+    the search until the gated tick fits <20 ms in the kernel, and measure the score.
